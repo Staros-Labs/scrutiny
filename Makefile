@@ -13,6 +13,7 @@ COLLECTOR_PERF_BINARY_NAME = scrutiny-collector-performance
 COLLECTOR_MDADM_BINARY_NAME = scrutiny-collector-mdadm
 COLLECTOR_FILESYSTEM_BINARY_NAME = scrutiny-collector-filesystem
 COLLECTOR_BTRFS_BINARY_NAME = scrutiny-collector-btrfs
+COLLECTOR_OMNIBUS_BINARY_NAME = scrutiny-collector-omnibus
 WEB_BINARY_NAME = scrutiny-web
 LD_FLAGS =
 
@@ -36,6 +37,7 @@ COLLECTOR_PERF_BINARY_NAME := $(COLLECTOR_PERF_BINARY_NAME)-$(GOOS)
 COLLECTOR_MDADM_BINARY_NAME := $(COLLECTOR_MDADM_BINARY_NAME)-$(GOOS)
 COLLECTOR_FILESYSTEM_BINARY_NAME := $(COLLECTOR_FILESYSTEM_BINARY_NAME)-$(GOOS)
 COLLECTOR_BTRFS_BINARY_NAME := $(COLLECTOR_BTRFS_BINARY_NAME)-$(GOOS)
+COLLECTOR_OMNIBUS_BINARY_NAME := $(COLLECTOR_OMNIBUS_BINARY_NAME)-$(GOOS)
 WEB_BINARY_NAME := $(WEB_BINARY_NAME)-$(GOOS)
 LD_FLAGS := $(LD_FLAGS) -X main.goos=$(GOOS)
 endif
@@ -46,6 +48,7 @@ COLLECTOR_PERF_BINARY_NAME := $(COLLECTOR_PERF_BINARY_NAME)-$(GOARCH)
 COLLECTOR_MDADM_BINARY_NAME := $(COLLECTOR_MDADM_BINARY_NAME)-$(GOARCH)
 COLLECTOR_FILESYSTEM_BINARY_NAME := $(COLLECTOR_FILESYSTEM_BINARY_NAME)-$(GOARCH)
 COLLECTOR_BTRFS_BINARY_NAME := $(COLLECTOR_BTRFS_BINARY_NAME)-$(GOARCH)
+COLLECTOR_OMNIBUS_BINARY_NAME := $(COLLECTOR_OMNIBUS_BINARY_NAME)-$(GOARCH)
 WEB_BINARY_NAME := $(WEB_BINARY_NAME)-$(GOARCH)
 LD_FLAGS := $(LD_FLAGS) -X main.goarch=$(GOARCH)
 endif
@@ -56,6 +59,7 @@ COLLECTOR_PERF_BINARY_NAME := $(COLLECTOR_PERF_BINARY_NAME)-$(GOARM)
 COLLECTOR_MDADM_BINARY_NAME := $(COLLECTOR_MDADM_BINARY_NAME)-$(GOARM)
 COLLECTOR_FILESYSTEM_BINARY_NAME := $(COLLECTOR_FILESYSTEM_BINARY_NAME)-$(GOARM)
 COLLECTOR_BTRFS_BINARY_NAME := $(COLLECTOR_BTRFS_BINARY_NAME)-$(GOARM)
+COLLECTOR_OMNIBUS_BINARY_NAME := $(COLLECTOR_OMNIBUS_BINARY_NAME)-$(GOARM)
 WEB_BINARY_NAME := $(WEB_BINARY_NAME)-$(GOARM)
 endif
 # Add .exe extension when building for Windows (native or cross-compile)
@@ -63,8 +67,10 @@ ifeq ($(OS),Windows_NT)
 COLLECTOR_BINARY_NAME := $(COLLECTOR_BINARY_NAME).exe
 COLLECTOR_ZFS_BINARY_NAME := $(COLLECTOR_ZFS_BINARY_NAME).exe
 COLLECTOR_PERF_BINARY_NAME := $(COLLECTOR_PERF_BINARY_NAME).exe
+COLLECTOR_MDADM_BINARY_NAME := $(COLLECTOR_MDADM_BINARY_NAME).exe
 COLLECTOR_FILESYSTEM_BINARY_NAME := $(COLLECTOR_FILESYSTEM_BINARY_NAME).exe
 COLLECTOR_BTRFS_BINARY_NAME := $(COLLECTOR_BTRFS_BINARY_NAME).exe
+COLLECTOR_OMNIBUS_BINARY_NAME := $(COLLECTOR_OMNIBUS_BINARY_NAME).exe
 WEB_BINARY_NAME := $(WEB_BINARY_NAME).exe
 else ifeq ($(GOOS),windows)
 COLLECTOR_BINARY_NAME := $(COLLECTOR_BINARY_NAME).exe
@@ -73,6 +79,7 @@ COLLECTOR_PERF_BINARY_NAME := $(COLLECTOR_PERF_BINARY_NAME).exe
 COLLECTOR_MDADM_BINARY_NAME := $(COLLECTOR_MDADM_BINARY_NAME).exe
 COLLECTOR_FILESYSTEM_BINARY_NAME := $(COLLECTOR_FILESYSTEM_BINARY_NAME).exe
 COLLECTOR_BTRFS_BINARY_NAME := $(COLLECTOR_BTRFS_BINARY_NAME).exe
+COLLECTOR_OMNIBUS_BINARY_NAME := $(COLLECTOR_OMNIBUS_BINARY_NAME).exe
 WEB_BINARY_NAME := $(WEB_BINARY_NAME).exe
 endif
 
@@ -83,8 +90,8 @@ endif
 all: binary-all
 
 .PHONY: binary-all
-binary-all: binary-collector binary-collector-zfs binary-collector-performance binary-collector-mdadm binary-web binary-collector-filesystem binary-collector-btrfs
-	@echo "built binary-collector, binary-collector-zfs, binary-collector-performance, binary-collector-mdadm and binary-web targets"
+binary-all: binary-collector binary-collector-zfs binary-collector-performance binary-collector-mdadm binary-web binary-collector-filesystem binary-collector-btrfs binary-collector-omnibus
+	@echo "built all web and collector binary targets"
 
 
 .PHONY: binary-clean
@@ -170,6 +177,22 @@ ifneq ($(OS),Windows_NT)
 	ldd $(COLLECTOR_BTRFS_BINARY_NAME) || true
 	./$(COLLECTOR_BTRFS_BINARY_NAME) || true
 endif
+
+.PHONY: binary-collector-omnibus
+binary-collector-omnibus: binary-dep
+	go build -buildvcs=false -ldflags "$(LD_FLAGS)" -o $(COLLECTOR_OMNIBUS_BINARY_NAME) $(STATIC_TAGS) ./collector/cmd/collector-omnibus/
+ifneq ($(OS),Windows_NT)
+	chmod +x $(COLLECTOR_OMNIBUS_BINARY_NAME)
+	file $(COLLECTOR_OMNIBUS_BINARY_NAME) || true
+	./$(COLLECTOR_OMNIBUS_BINARY_NAME) || true
+endif
+
+.PHONY: package-collector-omnibus
+package-collector-omnibus:
+	GOOS= GOARCH= GOARM= go run ./build/package-collector-omnibus \
+		--target-os "$(GOOS)" \
+		--target-arch "$(GOARCH)" \
+		--target-arm "$(GOARM)"
 
 .PHONY: binary-web
 binary-web: binary-dep
