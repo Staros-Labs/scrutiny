@@ -5,7 +5,7 @@ import { ApexOptions, ChartComponent } from 'ng-apexcharts';
 import { DashboardService } from 'app/modules/dashboard/dashboard.service';
 import { MatDialog as MatDialog } from '@angular/material/dialog';
 import { DashboardSettingsComponent } from 'app/layout/common/dashboard-settings/dashboard-settings.component';
-import { AppConfig, DashboardColumns, DashboardDensity } from 'app/core/config/app.config';
+import { AppConfig, DashboardColumns, DashboardDensity, DashboardPageSize } from 'app/core/config/app.config';
 import { ScrutinyConfigService } from 'app/core/config/scrutiny-config.service';
 import { Router, RouterLink } from '@angular/router';
 import { TemperaturePipe } from 'app/shared/temperature.pipe';
@@ -27,6 +27,8 @@ import { MatCheckbox } from '@angular/material/checkbox';
 import { MatDivider } from '@angular/material/divider';
 import { FileSizePipe } from '../../shared/file-size.pipe';
 import { DeviceSortPipe } from '../../shared/device-sort.pipe';
+import { MatPaginator, PageEvent } from '@angular/material/paginator';
+import { DeviceSummaryPagination } from 'app/core/models/device-summary-response-wrapper';
 
 const DASHBOARD_SHELL_WIDTHS: Record<DashboardColumns, string> = {
     2: '1440px',
@@ -63,6 +65,7 @@ const DASHBOARD_SHELL_WIDTHS: Record<DashboardColumns, string> = {
         KeyValuePipe,
         FileSizePipe,
         DeviceSortPipe,
+        MatPaginator,
     ],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -85,6 +88,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     mdadmArrays: MDADMArrayModel[] = [];
     isTriggering: boolean = false;
     countdown: number = 0;
+    pagination: DeviceSummaryPagination = {
+        page: 1,
+        page_size: 25,
+        total_items: 0,
+        total_pages: 0,
+        attention_count: 0,
+    };
+    readonly pageSizeOptions: DashboardPageSize[] = [25, 50, 100, 250];
 
     // Private
     private readonly _unsubscribeAll: Subject<void>;
@@ -131,9 +142,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
         });
 
         // Get the data
-        this._dashboardService.data$.pipe(takeUntil(this._unsubscribeAll)).subscribe((data) => {
+        this._dashboardService.pageData$.pipe(takeUntil(this._unsubscribeAll)).subscribe((data) => {
+            if (!data) {
+                return;
+            }
+
             // Store the data
-            this.summaryData = data;
+            this.summaryData = data.summary;
+            this.pagination = data.pagination;
+            this.hostGroups = {};
+            this.visibleDrives = {};
 
             // generate group data.
             for (const wwn in this.summaryData) {
@@ -147,6 +165,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             }
             // Prepare the chart data
             this._prepareChartData();
+            this._changeDetectorRef.markForCheck();
         });
 
         // Get MDADM data
@@ -482,16 +501,45 @@ export class DashboardComponent implements OnInit, OnDestroy {
         dialogRef.afterClosed().subscribe();
     }
 
-    onDeviceDeleted(wwn: string): void {
-        delete this.summaryData[wwn]; // remove the device from the summary list.
+    onDeviceDeleted(_deviceId: string): void {
+        const remainingItems = Math.max(0, this.pagination.total_items - 1);
+        const lastPage = Math.max(1, Math.ceil(remainingItems / this.pagination.page_size));
+        this.loadSummaryPage(Math.min(this.pagination.page, lastPage));
     }
 
-    onDeviceArchived(wwn: string): void {
-        this.summaryData[wwn].device.archived = true;
+    onDeviceArchived(_deviceId: string): void {
+        this.loadSummaryPage(1);
     }
 
-    onDeviceUnarchived(wwn: string): void {
-        this.summaryData[wwn].device.archived = false;
+    onDeviceUnarchived(_deviceId: string): void {
+        this.loadSummaryPage(1);
+    }
+
+    toggleArchived(): void {
+        this.showArchived = !this.showArchived;
+        this.loadSummaryPage(1);
+    }
+
+    onPageChange(event: PageEvent): void {
+        const pageSize = event.pageSize as DashboardPageSize;
+        if (pageSize !== this.pagination.page_size) {
+            this.config = { ...this.config, dashboard_page_size: pageSize };
+            this._configService.config = { dashboard_page_size: pageSize };
+        }
+        this.loadSummaryPage(event.pageIndex + 1, pageSize);
+    }
+
+    private loadSummaryPage(page: number, pageSize?: DashboardPageSize): void {
+        this._dashboardService
+            .getSummaryPage({
+                page,
+                pageSize: pageSize ?? (this.pagination.page_size as DashboardPageSize),
+                archived: this.showArchived,
+                sort: this.config?.dashboard_sort,
+                display: this.config?.dashboard_display,
+            })
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe();
     }
 
     dashboardColumns(): DashboardColumns {

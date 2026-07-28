@@ -91,6 +91,12 @@ export class MobileTabBarComponent implements OnInit, OnDestroy {
                 }
             }
         });
+
+        this._dashboardService.pageData$.pipe(takeUntil(this._unsubscribeAll)).subscribe((data) => {
+            if (data) {
+                this.drivesNeedAttention = data.pagination.attention_count;
+            }
+        });
     }
 
     ngOnDestroy(): void {

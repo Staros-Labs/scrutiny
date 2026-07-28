@@ -613,6 +613,17 @@ func (sr *scrutinyRepository) Migrate(ctx context.Context) error {
 			ID:      "m20260701000000", // add consumer drive profile family denylist setting (#552)
 			Migrate: sr.migrateM20260701000000,
 		},
+		{
+			ID: "m20260728000000", // add dashboard page size setting (#682)
+			Migrate: func(tx *gorm.DB) error {
+				return tx.Create(&m20220716214900.Setting{
+					SettingKeyName:        "dashboard_page_size",
+					SettingKeyDescription: "Number of SMART dashboard devices per page (25 | 50 | 100 | 250)",
+					SettingDataType:       "numeric",
+					SettingValueNumeric:   25,
+				}).Error
+			},
+		},
 	})
 
 	if err := m.Migrate(); err != nil {

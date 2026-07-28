@@ -589,6 +589,21 @@ func (mr *MockDeviceRepoMockRecorder) GetSummary(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSummary", reflect.TypeOf((*MockDeviceRepo)(nil).GetSummary), ctx)
 }
 
+// GetSummaryPage mocks base method.
+func (m *MockDeviceRepo) GetSummaryPage(ctx context.Context, options models.DeviceSummaryPageOptions) (*models.DeviceSummaryPage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSummaryPage", ctx, options)
+	ret0, _ := ret[0].(*models.DeviceSummaryPage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSummaryPage indicates an expected call of GetSummaryPage.
+func (mr *MockDeviceRepoMockRecorder) GetSummaryPage(ctx, options interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSummaryPage", reflect.TypeOf((*MockDeviceRepo)(nil).GetSummaryPage), ctx, options)
+}
+
 // GetWorkloadInsights mocks base method.
 func (m *MockDeviceRepo) GetWorkloadInsights(ctx context.Context, durationKey string) (map[string]*models.WorkloadInsight, error) {
 	m.ctrl.T.Helper()

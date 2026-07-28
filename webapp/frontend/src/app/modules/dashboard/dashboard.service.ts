@@ -3,11 +3,20 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { getBasePath } from 'app/app.routing';
-import { DeviceSummaryResponseWrapper } from 'app/core/models/device-summary-response-wrapper';
+import { DeviceSummaryPage, DeviceSummaryResponseWrapper } from 'app/core/models/device-summary-response-wrapper';
 import { DeviceSummaryModel } from 'app/core/models/device-summary-model';
 import { SmartTemperatureModel } from 'app/core/models/measurements/smart-temperature-model';
 import { DeviceSummaryTempResponseWrapper } from 'app/core/models/device-summary-temp-response-wrapper';
 import { FilesystemSummaryResponseWrapper, FilesystemCapacityModel, FilesystemHostStatusModel } from 'app/core/models/filesystem-summary-model';
+import { DashboardDisplay, DashboardPageSize, DashboardSort } from 'app/core/config/app.config';
+
+export interface SummaryPageRequest {
+    page: number;
+    pageSize?: DashboardPageSize;
+    archived?: boolean;
+    sort?: DashboardSort;
+    display?: DashboardDisplay;
+}
 
 @Injectable({
     providedIn: 'root',
@@ -17,6 +26,7 @@ export class DashboardService {
 
     // Observables
     private readonly _data: BehaviorSubject<{ [p: string]: DeviceSummaryModel }>;
+    private readonly _pageData: BehaviorSubject<DeviceSummaryPage | null>;
 
     /**
      * Constructor
@@ -26,6 +36,7 @@ export class DashboardService {
     constructor() {
         // Set the private defaults
         this._data = new BehaviorSubject(null);
+        this._pageData = new BehaviorSubject(null);
     }
 
     // -----------------------------------------------------------------------------------------------------
@@ -37,6 +48,10 @@ export class DashboardService {
      */
     get data$(): Observable<{ [p: string]: DeviceSummaryModel }> {
         return this._data.asObservable();
+    }
+
+    get pageData$(): Observable<DeviceSummaryPage | null> {
+        return this._pageData.asObservable();
     }
 
     // -----------------------------------------------------------------------------------------------------
@@ -53,6 +68,34 @@ export class DashboardService {
             }),
             tap((response: { [key: string]: DeviceSummaryModel }) => {
                 this._data.next(response);
+            })
+        );
+    }
+
+    getSummaryPage(request: SummaryPageRequest): Observable<DeviceSummaryPage> {
+        const params: Record<string, string> = {
+            page: request.page.toString(),
+            archived: String(request.archived ?? false),
+        };
+        if (request.pageSize) {
+            params['page_size'] = request.pageSize.toString();
+        }
+        if (request.sort) {
+            params['sort'] = request.sort;
+        }
+        if (request.display) {
+            params['display'] = request.display;
+        }
+
+        return this._httpClient.get<DeviceSummaryResponseWrapper>(getBasePath() + '/api/summary', { params }).pipe(
+            map((response) => {
+                return {
+                    summary: response.data.summary,
+                    pagination: response.data.pagination,
+                } as DeviceSummaryPage;
+            }),
+            tap((response) => {
+                this._pageData.next(response);
             })
         );
     }

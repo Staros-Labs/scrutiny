@@ -86,3 +86,19 @@ func TestSaveSettings_PreservesServerCapabilityFlags(t *testing.T) {
 	_, isBool := response["collector_trigger_enabled"].(bool)
 	require.True(t, isBool, "collector_trigger_enabled must be a boolean")
 }
+
+func TestSaveSettingsRejectsUnsupportedDashboardPageSize(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	t.Cleanup(mockCtrl.Finish)
+	mockRepo := mock_database.NewMockDeviceRepo(mockCtrl)
+	router := setupSettingsRouter(t, mockRepo)
+
+	body := strings.NewReader(`{"dashboard_page_size": 10}`)
+	response := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodPost, "/api/settings", body)
+	request.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(response, request)
+
+	require.Equal(t, http.StatusBadRequest, response.Code)
+	require.Contains(t, response.Body.String(), "dashboard_page_size")
+}
