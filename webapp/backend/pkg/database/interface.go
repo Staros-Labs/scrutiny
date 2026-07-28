@@ -49,6 +49,9 @@ type DeviceRepo interface {
 	UpdateDeviceMissedPingTimeout(ctx context.Context, deviceID string, timeoutMinutes int) error
 	MergeDevices(ctx context.Context, sourceDeviceID string, destinationDeviceID string) error
 	DeleteDevice(ctx context.Context, deviceID string) error
+	GetHosts(ctx context.Context) ([]models.HostSummary, error)
+	UpdateHostArchived(ctx context.Context, hostID string, archived bool) (int64, error)
+	PurgeHosts(ctx context.Context, hostIDs []string) ([]models.HostActionResult, error)
 	// RecalculateDeviceStatusFromHistory re-evaluates device status from stored SMART data
 	// with current overrides applied. Used when overrides are added/modified/deleted.
 	RecalculateDeviceStatusFromHistory(ctx context.Context, deviceID string) error

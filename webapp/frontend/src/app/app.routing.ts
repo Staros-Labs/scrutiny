@@ -55,6 +55,9 @@ export const appRoutes: Route[] = [
             // Workload Insights
             { path: 'workload', loadChildren: () => import('app/modules/workload/workload.module').then((m) => m.WorkloadModule) },
 
+            // SMART host management
+            { path: 'hosts', loadChildren: () => import('app/modules/hosts/hosts.module').then((m) => m.HostsModule) },
+
             // Mobile-only routes
             { path: 'mobile-home', loadChildren: () => import('app/modules/mobile-home/mobile-home.module').then((m) => m.MobileHomeModule) },
             { path: 'mobile-drives', loadChildren: () => import('app/modules/dashboard/dashboard.module').then((m) => m.DashboardModule) },

@@ -4,13 +4,14 @@ import { DashboardSettingsComponent } from 'app/layout/common/dashboard-settings
 import { versionInfo } from 'environments/versions';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
+import { RouterLink } from '@angular/router';
 
 @Component({
     selector: 'mobile-settings',
     templateUrl: './mobile-settings.component.html',
     styleUrls: ['./mobile-settings.component.scss'],
     encapsulation: ViewEncapsulation.None,
-    imports: [MatButton, MatIcon],
+    imports: [MatButton, MatIcon, RouterLink],
 })
 export class MobileSettingsComponent {
     private readonly dialog = inject(MatDialog);
