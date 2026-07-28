@@ -1,0 +1,14 @@
+<h2 mat-dialog-title>Permanently purge {{ data.hostIds.length }} host{{ data.hostIds.length === 1 ? '' : 's' }}?</h2>
+<mat-dialog-content>
+    <p>This deletes selected hosts, devices, and all matching SMART and temperature history. This cannot be undone.</p>
+    <p><strong>Stop active collectors first.</strong> Any collector still reporting these devices can re-register them after purge.</p>
+    <p>Type <strong>PURGE</strong> to continue.</p>
+    <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Confirmation</mat-label>
+        <input matInput [(ngModel)]="confirmation" autocomplete="off" />
+    </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-flat-button color="warn" [disabled]="confirmation !== 'PURGE'" (click)="confirm()">Permanently purge</button>
+</mat-dialog-actions>

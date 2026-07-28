@@ -51,6 +51,7 @@ Full credit for the original vision and architecture goes to [AnalogJ](https://g
 - **HTML Email Notifications** - Rich HTML emails with plain-text fallback for reports, test notifications, collector errors, missed ping digests, and other alert emails over SMTP
 - **Enhanced Seagate Drive Support** - Better timeout handling and FARM log collection for Seagate drives
 - **Workload Insights** - Visualize daily read/write rates, I/O intensity, SSD endurance, and activity spike detection
+- **SMART Host Management** - Search collector hosts and bulk archive, unarchive, or safely purge their devices
 - **Home Assistant MQTT Discovery** - Native MQTT integration for automatic device discovery in Home Assistant
 - **UI-Configurable Notification URLs** - Add, edit, test, and delete notification endpoints directly in the web UI
 - **Uptime Kuma Push Monitor** - Dedicated push-based integration for Uptime Kuma status monitoring
@@ -150,6 +151,7 @@ These S.M.A.R.T hard drive self-tests can help you detect and replace failing ha
 - **Missed Ping Digest** - Batch notification when multiple collectors go unreachable
 - **HTML Email Notifications** - Rich HTML formatting with plain-text fallback for SMTP notifications, including reports, test notifications, collector errors, missed ping digests, heartbeat, performance degradation, replacement risk, and MDADM degradation alerts
 - **Workload Insights** - Daily read/write rates, R/W ratio, I/O intensity classification, SSD endurance tracking, and activity spike detection
+- **SMART Host Management** - Bulk archive, unarchive, and confirmed permanent purge with shared-WWN protection ([operator guide](docs/HOST_MANAGEMENT.md))
 - **Consumer Drive Profiles** - Apply vetted ATA HDD and SSD profiles based on Backblaze-informed thresholds, with opt-out controls and replacement-risk transparency
 - **Filesystem Capacity Monitoring** - Track logical filesystem free space independently from SMART device health
 - **MDADM Monitoring** - Monitor Linux software RAID arrays with a dedicated collector

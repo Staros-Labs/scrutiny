@@ -365,6 +365,21 @@ func (mr *MockDeviceRepoMockRecorder) GetFilesystemSummary(ctx interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFilesystemSummary", reflect.TypeOf((*MockDeviceRepo)(nil).GetFilesystemSummary), ctx)
 }
 
+// GetHosts mocks base method.
+func (m *MockDeviceRepo) GetHosts(ctx context.Context) ([]models.HostSummary, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetHosts", ctx)
+	ret0, _ := ret[0].([]models.HostSummary)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetHosts indicates an expected call of GetHosts.
+func (mr *MockDeviceRepoMockRecorder) GetHosts(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHosts", reflect.TypeOf((*MockDeviceRepo)(nil).GetHosts), ctx)
+}
+
 // GetLatestMdadmMetrics mocks base method.
 func (m *MockDeviceRepo) GetLatestMdadmMetrics(ctx context.Context, uuid string) (*measurements.MDADMMetrics, error) {
 	m.ctrl.T.Helper()
@@ -736,6 +751,21 @@ func (m *MockDeviceRepo) MergeDevices(ctx context.Context, sourceDeviceID, desti
 func (mr *MockDeviceRepoMockRecorder) MergeDevices(ctx, sourceDeviceID, destinationDeviceID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeDevices", reflect.TypeOf((*MockDeviceRepo)(nil).MergeDevices), ctx, sourceDeviceID, destinationDeviceID)
+}
+
+// PurgeHosts mocks base method.
+func (m *MockDeviceRepo) PurgeHosts(ctx context.Context, hostIDs []string) ([]models.HostActionResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PurgeHosts", ctx, hostIDs)
+	ret0, _ := ret[0].([]models.HostActionResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PurgeHosts indicates an expected call of PurgeHosts.
+func (mr *MockDeviceRepoMockRecorder) PurgeHosts(ctx, hostIDs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PurgeHosts", reflect.TypeOf((*MockDeviceRepo)(nil).PurgeHosts), ctx, hostIDs)
 }
 
 // RecalculateDeviceStatusFromHistory mocks base method.
@@ -1146,6 +1176,21 @@ func (m *MockDeviceRepo) UpdateDeviceStatus(ctx context.Context, deviceID string
 func (mr *MockDeviceRepoMockRecorder) UpdateDeviceStatus(ctx, deviceID, status interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDeviceStatus", reflect.TypeOf((*MockDeviceRepo)(nil).UpdateDeviceStatus), ctx, deviceID, status)
+}
+
+// UpdateHostArchived mocks base method.
+func (m *MockDeviceRepo) UpdateHostArchived(ctx context.Context, hostID string, archived bool) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateHostArchived", ctx, hostID, archived)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateHostArchived indicates an expected call of UpdateHostArchived.
+func (mr *MockDeviceRepoMockRecorder) UpdateHostArchived(ctx, hostID, archived interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateHostArchived", reflect.TypeOf((*MockDeviceRepo)(nil).UpdateHostArchived), ctx, hostID, archived)
 }
 
 // UpdateMdadmArrayArchived mocks base method.
