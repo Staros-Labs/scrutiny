@@ -312,6 +312,8 @@ it is possible to run it manually without much work. You can even mix and match,
 a manual installation for the other.
 
 See [docs/INSTALL_MANUAL.md](docs/INSTALL_MANUAL.md) for instructions.
+For a single download containing every collector plus a built-in scheduler,
+see [Standalone Collector Omnibus](docs/INSTALL_COLLECTOR_OMNIBUS.md).
 
 ## Usage
 
