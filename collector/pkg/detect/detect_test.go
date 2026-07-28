@@ -630,8 +630,10 @@ func TestDetect_SmartCtlInfo(t *testing.T) {
 
 		assert.Empty(t, someDevice.ModelName)
 		assert.Empty(t, someDevice.SerialNumber)
-		assert.Empty(t, someDevice.WWN)
 		assert.False(t, someDevice.SmartSupport.Available)
+		// WWN is deliberately not asserted: with no wwn block in the response the
+		// platform-specific wwnFallback runs, and on a Linux host it reports whatever
+		// real disk happens to sit at /dev/sda.
 	})
 
 	// fixes #664: "scsi" and "ata" are suppressed only because `smartctl --scan`
