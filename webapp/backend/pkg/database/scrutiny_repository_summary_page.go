@@ -105,7 +105,7 @@ func compareDeviceSummaries(left, right *models.DeviceSummary, sortBy, display s
 	comparison := 0
 	switch sortField {
 	case "title":
-		comparison = strings.Compare(deviceTitleForType(left.Device, display), deviceTitleForType(right.Device, display))
+		comparison = strings.Compare(deviceTitleForType(&left.Device, display), deviceTitleForType(&right.Device, display))
 	case "age":
 		comparison = compareInt64(summaryPowerOnHours(left), summaryPowerOnHours(right))
 	case "capacity":
@@ -175,7 +175,7 @@ func compareInt64(left, right int64) int {
 	}
 }
 
-func deviceTitleForType(device models.Device, display string) string {
+func deviceTitleForType(device *models.Device, display string) string {
 	title := ""
 	switch display {
 	case "serial_id":
@@ -202,7 +202,7 @@ func deviceTitleForType(device models.Device, display string) string {
 	return title
 }
 
-func deviceNameTitle(device models.Device) string {
+func deviceNameTitle(device *models.Device) string {
 	parts := make([]string, 0, 3)
 	if device.DeviceName != "" {
 		if strings.HasPrefix(device.DeviceName, "/dev/") {

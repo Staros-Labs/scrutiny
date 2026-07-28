@@ -45,7 +45,7 @@ func TestCompareDeviceSummariesPreservesStatusSortSemantics(t *testing.T) {
 func TestDeviceTitleForTypeFallsBackToDeviceName(t *testing.T) {
 	device := models.Device{DeviceName: "sda", DeviceType: "sat", ModelName: "Example"}
 
-	require.Equal(t, "/dev/sda - sat - Example", deviceTitleForType(device, "label"))
+	require.Equal(t, "/dev/sda - sat - Example", deviceTitleForType(&device, "label"))
 }
 
 func TestBuildSummaryPageFiltersSlicesAndCountsAttention(t *testing.T) {

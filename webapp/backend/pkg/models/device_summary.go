@@ -23,11 +23,11 @@ type PaginationMetadata struct {
 }
 
 type DeviceSummaryPageOptions struct {
+	Sort     string
+	Display  string
 	Page     int
 	PageSize int
 	Archived bool
-	Sort     string
-	Display  string
 }
 
 type DeviceSummaryPage struct {
