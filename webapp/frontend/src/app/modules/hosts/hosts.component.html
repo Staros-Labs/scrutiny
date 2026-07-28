@@ -1,0 +1,78 @@
+<div class="hosts-page flex flex-col flex-auto w-full p-8 xs:p-4">
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div>
+            <h2 class="m-0">SMART Hosts</h2>
+            <div class="text-secondary">Archive or permanently purge devices grouped by collector host ID.</div>
+        </div>
+        <button mat-stroked-button (click)="loadHosts()" [disabled]="loading || actionInProgress">
+            <mat-icon class="icon-size-20 mr-2">refresh</mat-icon>
+            Refresh
+        </button>
+    </div>
+
+    <div class="host-warning rounded-lg p-4 mb-6">
+        <strong>Before purge:</strong> stop collectors for selected hosts. Active collectors can immediately re-register purged devices.
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+        <mat-form-field appearance="outline" class="host-search">
+            <mat-label>Search hosts</mat-label>
+            <mat-icon matPrefix>search</mat-icon>
+            <input matInput [value]="search" (input)="setSearch($any($event.target).value)" />
+        </mat-form-field>
+
+        <span class="text-secondary">{{ selectedCount }} selected</span>
+        <span class="flex-auto"></span>
+        <button mat-stroked-button (click)="archiveSelected()" [disabled]="selectedCount === 0 || actionInProgress">Archive devices</button>
+        <button mat-stroked-button (click)="unarchiveSelected()" [disabled]="selectedCount === 0 || actionInProgress">Unarchive devices</button>
+        <button mat-flat-button color="warn" (click)="purgeSelected()" [disabled]="selectedCount === 0 || actionInProgress">Permanently purge</button>
+    </div>
+
+    @if (actionResults.length > 0) {
+    <div class="action-results rounded-lg p-4 mb-4">
+        <div class="font-semibold mb-2">Latest results</div>
+        @for (result of actionResults; track result.host_id) {
+        <div class="flex items-start gap-2 text-sm py-1">
+            <mat-icon class="icon-size-18" [class.text-green-500]="result.success" [class.text-red-500]="!result.success">
+                {{ result.success ? 'check_circle' : 'error' }}
+            </mat-icon>
+            <div>
+                <strong>{{ result.host_id }}</strong>
+                — {{ result.success ? result.device_count + ' device(s) updated' : result.error }}
+            </div>
+        </div>
+        } @if (lastAction === 'purge' && selectedCount > 0) {
+        <button mat-button class="mt-2" (click)="retryFailed()" [disabled]="actionInProgress || !selectedCount">Retry failed purges</button>
+        }
+    </div>
+    } @if (loading) {
+    <div class="flex justify-center p-12"><mat-spinner diameter="40"></mat-spinner></div>
+    } @else if (loadError) {
+    <div class="text-red-500 p-6 text-center">{{ loadError }}</div>
+    } @else if (filteredHosts.length === 0) {
+    <div class="text-secondary p-12 text-center">{{ hosts.length === 0 ? 'No SMART hosts with a host ID were found.' : 'No hosts match this search.' }}</div>
+    } @else {
+    <div class="host-table rounded-lg overflow-hidden">
+        <div class="host-row host-header">
+            <mat-checkbox [checked]="allFilteredSelected" (change)="toggleFilteredHosts($event.checked)" aria-label="Select all filtered hosts"></mat-checkbox>
+            <div>Host</div>
+            <div>Active</div>
+            <div>Archived</div>
+            <div>Total</div>
+        </div>
+        @for (host of filteredHosts; track host.host_id) {
+        <div class="host-row">
+            <mat-checkbox
+                [checked]="selectedHostIds.has(host.host_id)"
+                (change)="toggleHost(host.host_id, $event.checked)"
+                [attr.aria-label]="'Select ' + host.host_id"
+            ></mat-checkbox>
+            <div class="font-semibold break-all">{{ host.host_id }}</div>
+            <div><span class="mobile-label">Active</span>{{ host.active_devices }}</div>
+            <div><span class="mobile-label">Archived</span>{{ host.archived_devices }}</div>
+            <div><span class="mobile-label">Total</span>{{ host.total_devices }}</div>
+        </div>
+        }
+    </div>
+    }
+</div>

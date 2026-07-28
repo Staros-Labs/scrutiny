@@ -4,6 +4,7 @@ import {
     AppConfig,
     DashboardColumns,
     DashboardDensity,
+    DashboardPageSize,
     AttributeOverride,
     DashboardDisplay,
     DashboardSort,
@@ -91,6 +92,7 @@ export class DashboardSettingsComponent implements OnInit {
     dashboardSort: DashboardSort;
     dashboardColumns: DashboardColumns;
     dashboardDensity: DashboardDensity;
+    dashboardPageSize: DashboardPageSize;
     temperatureUnit: string;
     fileSizeSIUnits: boolean;
     poweredOnHoursUnit: string;
@@ -98,6 +100,7 @@ export class DashboardSettingsComponent implements OnInit {
     lineStroke: string;
     theme: string;
     retrieveSCTTemperatureHistory: boolean;
+    storeTemperatureHistory: boolean;
     notifyLevel: number;
     statusThreshold: number;
     statusFilterAttributes: number;
@@ -213,6 +216,7 @@ export class DashboardSettingsComponent implements OnInit {
             this.dashboardSort = config.dashboard_sort;
             this.dashboardColumns = config.dashboard_columns;
             this.dashboardDensity = config.dashboard_density;
+            this.dashboardPageSize = config.dashboard_page_size;
             this.temperatureUnit = config.temperature_unit;
             this.fileSizeSIUnits = config.file_size_si_units;
             this.poweredOnHoursUnit = config.powered_on_hours_unit;
@@ -221,6 +225,7 @@ export class DashboardSettingsComponent implements OnInit {
             this.theme = config.theme;
 
             this.retrieveSCTTemperatureHistory = config.collector.retrieve_sct_temperature_history;
+            this.storeTemperatureHistory = config.collector.store_temperature_history ?? true;
 
             this.notifyLevel = config.metrics.notify_level;
             this.statusFilterAttributes = config.metrics.status_filter_attributes;
@@ -537,6 +542,7 @@ export class DashboardSettingsComponent implements OnInit {
             dashboard_sort: this.dashboardSort as DashboardSort,
             dashboard_columns: this.dashboardColumns as DashboardColumns,
             dashboard_density: this.dashboardDensity as DashboardDensity,
+            dashboard_page_size: this.dashboardPageSize as DashboardPageSize,
             temperature_unit: this.temperatureUnit as TemperatureUnit,
             time_format: this.timeFormat as TimeFormat,
             file_size_si_units: this.fileSizeSIUnits,
@@ -545,6 +551,7 @@ export class DashboardSettingsComponent implements OnInit {
             theme: this.theme as Theme,
             collector: {
                 retrieve_sct_temperature_history: this.retrieveSCTTemperatureHistory,
+                store_temperature_history: this.storeTemperatureHistory,
             },
             metrics: {
                 notify_level: this.notifyLevel as MetricsNotifyLevel,

@@ -116,6 +116,10 @@ Hub. The official
 documentation [describes the manual setup of the Collector](https://github.com/Starosdev/scrutiny/blob/master/docs/INSTALL_MANUAL.md#collector)
 - dependencies and step by step commands. I have a shortened version that does the same thing but in one line of code.
 
+For hosts running several collector types, the
+[standalone collector omnibus](INSTALL_COLLECTOR_OMNIBUS.md) packages all
+collector binaries with one cross-platform scheduler.
+
 ```bash
 # Installing dependencies
 apt install smartmontools -y 

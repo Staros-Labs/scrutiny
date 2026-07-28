@@ -170,6 +170,12 @@ jobs:
           GOARCH: ${{ matrix.cfg.goarch }}
           GOARM: ${{ matrix.cfg.goarm }}
         run: make binary-clean binary-all
+      - name: Package Collector Omnibus
+        env:
+          GOOS: ${{ matrix.cfg.goos }}
+          GOARCH: ${{ matrix.cfg.goarch }}
+          GOARM: ${{ matrix.cfg.goarm }}
+        run: make package-collector-omnibus
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -182,6 +188,8 @@ jobs:
             scrutiny-collector-btrfs-*
             scrutiny-collector-performance-*
             scrutiny-collector-filesystem-*
+            scrutiny-collector-omnibus-*.tar.gz
+            scrutiny-collector-omnibus-*.zip
 
   upload-assets:
     name: Upload Release Assets

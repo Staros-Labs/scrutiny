@@ -122,10 +122,15 @@ func (ae *AppEngine) Setup(logger *logrus.Entry) *gin.Engine {
 			api.POST("/health/uptime-kuma-test", handler.TestUptimeKumaPush)   // test Uptime Kuma push monitor
 			api.POST("/health/mqtt-sync", handler.MqttSync)                    // re-sync all MQTT discovery entities with HA
 
-			api.POST("/devices/register", handler.RegisterDevices)            // used by Collector to register new devices and retrieve filtered list
-			api.GET(apiSummaryPath, handler.GetDevicesSummary)                // used by Dashboard
-			api.GET("/summary/temp", handler.GetDevicesSummaryTempHistory)    // used by Dashboard (Temperature history dropdown)
-			api.GET("/summary/workload", handler.GetWorkloadInsights)         // used by Workload Insights page
+			api.POST("/devices/register", handler.RegisterDevices)         // used by Collector to register new devices and retrieve filtered list
+			api.GET(apiSummaryPath, handler.GetDevicesSummary)             // used by Dashboard
+			api.GET("/summary/temp", handler.GetDevicesSummaryTempHistory) // used by Dashboard (Temperature history dropdown)
+			api.GET("/summary/temp/devices", handler.GetTemperatureDeviceOptions)
+			api.GET("/summary/workload", handler.GetWorkloadInsights) // used by Workload Insights page
+			api.GET("/hosts", handler.GetHosts)                       // used by SMART host management
+			api.POST("/hosts/archive", handler.ArchiveHosts)
+			api.POST("/hosts/unarchive", handler.UnarchiveHosts)
+			api.POST("/hosts/purge", handler.PurgeHosts)
 			api.GET("/filesystems/summary", handler.GetFilesystemSummary)     // used by Dashboard filesystem capacity panel
 			api.POST("/filesystems/summary", handler.UploadFilesystemSummary) // used by Filesystem Collector to upload data
 			api.POST("/collectors/run", handler.TriggerCollectors)            // used by Dashboard to trigger local collectors in omnibus mode

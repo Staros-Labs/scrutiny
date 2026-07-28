@@ -613,6 +613,28 @@ func (sr *scrutinyRepository) Migrate(ctx context.Context) error {
 			ID:      "m20260701000000", // add consumer drive profile family denylist setting (#552)
 			Migrate: sr.migrateM20260701000000,
 		},
+		{
+			ID: "m20260728000000", // add dashboard page size setting (#682)
+			Migrate: func(tx *gorm.DB) error {
+				return tx.Create(&m20220716214900.Setting{
+					SettingKeyName:        "dashboard_page_size",
+					SettingKeyDescription: "Number of SMART dashboard devices per page (25 | 50 | 100 | 250)",
+					SettingDataType:       "numeric",
+					SettingValueNumeric:   25,
+				}).Error
+			},
+		},
+		{
+			ID: "m20260729000000", // add temperature history storage setting (#683)
+			Migrate: func(tx *gorm.DB) error {
+				return tx.Create(&m20220716214900.Setting{
+					SettingKeyName:        "store_temperature_history",
+					SettingKeyDescription: "Store new temperature history points",
+					SettingDataType:       "bool",
+					SettingValueBool:      true,
+				}).Error
+			},
+		},
 	})
 
 	if err := m.Migrate(); err != nil {

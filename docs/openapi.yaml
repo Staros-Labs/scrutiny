@@ -12,6 +12,7 @@ tags:
   - name: Auth
   - name: Health
   - name: Devices
+  - name: Hosts
   - name: Settings
   - name: Reports
   - name: Filesystems
@@ -173,6 +174,38 @@ paths:
     get:
       tags: [Devices]
       summary: Get dashboard device summary
+      description: Without `page`, returns the legacy unpaginated summary. Supplying `page` enables global device pagination while retaining host-first ordering.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+          description: One-based page number. Omit for the legacy unpaginated response.
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            enum: [25, 50, 100, 250]
+          description: Devices per page. Defaults to the saved dashboard setting.
+        - name: archived
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Return archived devices instead of active devices.
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [status, status_asc, status_desc, title, title_asc, title_desc, age, age_asc, age_desc, capacity_asc, capacity_desc, temperature_asc, temperature_desc]
+          description: Dashboard device sort. Defaults to the saved dashboard setting.
+        - name: display
+          in: query
+          schema:
+            type: string
+            enum: [name, serial_id, uuid, label]
+          description: Title source used by title sorting. Defaults to the saved dashboard setting.
       responses:
         "200":
           description: Device summary payload
@@ -180,6 +213,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DeviceSummaryWrapper"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
         "500":
           $ref: "#/components/responses/ErrorResponse"
   /api/summary/temp:
@@ -188,6 +223,16 @@ paths:
       summary: Get temperature history for the summary dashboard
       parameters:
         - $ref: "#/components/parameters/DurationKey"
+        - name: device_id
+          in: query
+          description: Device IDs to include. Repeat for each selected drive. Omit to preserve legacy unfiltered behavior.
+          schema:
+            type: array
+            maxItems: 20
+            items:
+              type: string
+          style: form
+          explode: true
       responses:
         "200":
           description: Temperature history
@@ -202,9 +247,38 @@ paths:
                     type: object
                     properties:
                       temp_history:
+                        type: object
+                        additionalProperties:
+                          type: array
+                          items:
+                            $ref: "#/components/schemas/SmartTemperature"
+                required: [success, data]
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/summary/temp/devices:
+    get:
+      tags: [Devices]
+      summary: List active drives available for temperature history selection
+      responses:
+        "200":
+          description: Lightweight temperature drive options
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      devices:
                         type: array
                         items:
-                          $ref: "#/components/schemas/SmartTemperature"
+                          $ref: "#/components/schemas/TemperatureDeviceOption"
+                    required: [devices]
                 required: [success, data]
         "500":
           $ref: "#/components/responses/ErrorResponse"
@@ -232,6 +306,84 @@ paths:
                         additionalProperties:
                           $ref: "#/components/schemas/WorkloadInsight"
                 required: [success, data]
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/hosts:
+    get:
+      tags: [Hosts]
+      summary: List SMART collector hosts
+      description: Returns non-empty SMART device host IDs with active, archived, and total device counts. Non-SMART resources are excluded.
+      responses:
+        "200":
+          description: SMART host inventory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostSummaryResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/hosts/archive:
+    post:
+      tags: [Hosts]
+      summary: Archive all SMART devices for selected hosts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HostActionRequest"
+      responses:
+        "200":
+          description: Per-host archive results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostActionResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/hosts/unarchive:
+    post:
+      tags: [Hosts]
+      summary: Unarchive all SMART devices for selected hosts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HostActionRequest"
+      responses:
+        "200":
+          description: Per-host unarchive results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostActionResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/hosts/purge:
+    post:
+      tags: [Hosts]
+      summary: Permanently purge selected SMART hosts
+      description: Deletes selected SMART devices and matching InfluxDB history. A WWN shared with a device outside the selected host set blocks that host. Successful hosts can be omitted when retrying partial failures.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HostPurgeRequest"
+      responses:
+        "200":
+          description: Per-host purge results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostActionResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
         "500":
           $ref: "#/components/responses/ErrorResponse"
   /api/filesystems/summary:
@@ -1397,6 +1549,79 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
   schemas:
+    HostSummary:
+      type: object
+      properties:
+        host_id:
+          type: string
+          minLength: 1
+        active_devices:
+          type: integer
+          format: int64
+          minimum: 0
+        archived_devices:
+          type: integer
+          format: int64
+          minimum: 0
+        total_devices:
+          type: integer
+          format: int64
+          minimum: 1
+      required: [host_id, active_devices, archived_devices, total_devices]
+    HostSummaryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/HostSummary"
+      required: [success, data]
+    HostActionRequest:
+      type: object
+      properties:
+        host_ids:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            minLength: 1
+      required: [host_ids]
+    HostPurgeRequest:
+      allOf:
+        - $ref: "#/components/schemas/HostActionRequest"
+        - type: object
+          properties:
+            confirmation:
+              type: string
+              enum: [PURGE]
+          required: [confirmation]
+    HostActionResult:
+      type: object
+      properties:
+        host_id:
+          type: string
+        success:
+          type: boolean
+        device_count:
+          type: integer
+          format: int64
+          minimum: 0
+        error:
+          type: string
+      required: [host_id, success, device_count]
+    HostActionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: True only when every requested host succeeds.
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/HostActionResult"
+      required: [success, data]
     SuccessResponse:
       type: object
       properties:
@@ -1820,6 +2045,10 @@ components:
           type: integer
         dashboard_density:
           type: string
+        dashboard_page_size:
+          type: integer
+          enum: [25, 50, 100, 250]
+          default: 25
         temperature_unit:
           type: string
         line_stroke:
@@ -1835,6 +2064,10 @@ components:
           properties:
             retrieve_sct_temperature_history:
               type: boolean
+            store_temperature_history:
+              type: boolean
+              default: true
+              description: Store new temperature history points. Disabling retains existing history and current SMART temperatures.
         metrics:
           type: object
           properties:
@@ -2675,6 +2908,23 @@ components:
         high_priority_unload_events:
           type: integer
           format: int64
+    TemperatureDeviceOption:
+      type: object
+      properties:
+        device_id:
+          type: string
+        host_id:
+          type: string
+        label:
+          type: string
+        device_name:
+          type: string
+        model_name:
+          type: string
+        serial_number:
+          type: string
+      required:
+        [device_id, host_id, label, device_name, model_name, serial_number]
     SmartTemperature:
       type: object
       properties:
@@ -2752,6 +3002,27 @@ components:
               type: object
               additionalProperties:
                 $ref: "#/components/schemas/DeviceSummary"
+            pagination:
+              $ref: "#/components/schemas/PaginationMetadata"
+    PaginationMetadata:
+      type: object
+      required: [page, page_size, total_items, total_pages, attention_count]
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        page_size:
+          type: integer
+          enum: [25, 50, 100, 250]
+        total_items:
+          type: integer
+          minimum: 0
+        total_pages:
+          type: integer
+          minimum: 0
+        attention_count:
+          type: integer
+          minimum: 0
     DeviceSummary:
       type: object
       properties:

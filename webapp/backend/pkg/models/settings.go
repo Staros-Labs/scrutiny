@@ -52,9 +52,11 @@ type Settings struct {
 	PoweredOnHoursUnit string `json:"powered_on_hours_unit" mapstructure:"powered_on_hours_unit"`
 	TimeFormat         string `json:"time_format" mapstructure:"time_format"`
 	DashboardColumns   int    `json:"dashboard_columns" mapstructure:"dashboard_columns"`
+	DashboardPageSize  int    `json:"dashboard_page_size" mapstructure:"dashboard_page_size"`
 	FileSizeSIUnits    bool   `json:"file_size_si_units" mapstructure:"file_size_si_units"`
 	Collector          struct {
 		RetrieveSCTHistory bool `json:"retrieve_sct_temperature_history" mapstructure:"retrieve_sct_temperature_history"`
+		StoreTempHistory   bool `json:"store_temperature_history" mapstructure:"store_temperature_history"`
 	} `json:"collector" mapstructure:"collector"` // Missed collector ping notification settings
 	Navigation struct {
 		ShowZFSPools bool `json:"show_zfs_pools" mapstructure:"show_zfs_pools"`
@@ -103,6 +105,7 @@ func (s *Settings) ApplyDefaults() {
 	defaultStr(&s.PoweredOnHoursUnit, "humanize")
 	defaultStr(&s.TimeFormat, "24")
 	defaultInt(&s.DashboardColumns, 2)
+	defaultInt(&s.DashboardPageSize, 25)
 
 	// Metrics: numeric fields where 0 is not a valid value.
 	// Note: StatusFilterAttributes defaults to 0 (All), which is the zero value, so no check needed.

@@ -20,6 +20,11 @@ func SaveSettings(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false})
 		return
 	}
+	settings.ApplyDefaults()
+	if !validSummaryPageSize(settings.DashboardPageSize) {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "dashboard_page_size must be one of 25, 50, 100, or 250"})
+		return
+	}
 
 	err = deviceRepo.SaveSettings(c, settings)
 	if err != nil {

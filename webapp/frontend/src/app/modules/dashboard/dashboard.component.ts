@@ -5,7 +5,7 @@ import { ApexOptions, ChartComponent } from 'ng-apexcharts';
 import { DashboardService } from 'app/modules/dashboard/dashboard.service';
 import { MatDialog as MatDialog } from '@angular/material/dialog';
 import { DashboardSettingsComponent } from 'app/layout/common/dashboard-settings/dashboard-settings.component';
-import { AppConfig, DashboardColumns, DashboardDensity } from 'app/core/config/app.config';
+import { AppConfig, DashboardColumns, DashboardDensity, DashboardPageSize } from 'app/core/config/app.config';
 import { ScrutinyConfigService } from 'app/core/config/scrutiny-config.service';
 import { Router, RouterLink } from '@angular/router';
 import { TemperaturePipe } from 'app/shared/temperature.pipe';
@@ -27,6 +27,12 @@ import { MatCheckbox } from '@angular/material/checkbox';
 import { MatDivider } from '@angular/material/divider';
 import { FileSizePipe } from '../../shared/file-size.pipe';
 import { DeviceSortPipe } from '../../shared/device-sort.pipe';
+import { MatPaginator, PageEvent } from '@angular/material/paginator';
+import { DeviceSummaryPagination } from 'app/core/models/device-summary-response-wrapper';
+import { TemperatureDeviceOption } from 'app/core/models/device-summary-temp-response-wrapper';
+import { SmartTemperatureModel } from 'app/core/models/measurements/smart-temperature-model';
+import { MatInput } from '@angular/material/input';
+import { FormsModule } from '@angular/forms';
 
 const DASHBOARD_SHELL_WIDTHS: Record<DashboardColumns, string> = {
     2: '1440px',
@@ -63,6 +69,9 @@ const DASHBOARD_SHELL_WIDTHS: Record<DashboardColumns, string> = {
         KeyValuePipe,
         FileSizePipe,
         DeviceSortPipe,
+        MatPaginator,
+        MatInput,
+        FormsModule,
     ],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -78,17 +87,29 @@ export class DashboardComponent implements OnInit, OnDestroy {
     hostGroups: { [hostId: string]: string[] } = {};
     filesystemSummaryData: { filesystems: Record<string, FilesystemCapacityModel[]>; hosts: Record<string, FilesystemHostStatusModel> } | null = null;
     temperatureOptions: ApexOptions;
-    tempDurationKey = 'forever';
+    tempDurationKey = 'week';
     config: AppConfig;
     showArchived: boolean = false;
-    visibleDrives: { [wwn: string]: boolean } = {};
+    temperatureDevices: TemperatureDeviceOption[] = [];
+    temperatureDeviceSearch = '';
+    temperatureHistory: { [deviceID: string]: SmartTemperatureModel[] } = {};
+    readonly temperatureSelection = this._dashboardService.temperatureSelection;
     mdadmArrays: MDADMArrayModel[] = [];
     isTriggering: boolean = false;
     countdown: number = 0;
+    pagination: DeviceSummaryPagination = {
+        page: 1,
+        page_size: 25,
+        total_items: 0,
+        total_pages: 0,
+        attention_count: 0,
+    };
+    readonly pageSizeOptions: DashboardPageSize[] = [25, 50, 100, 250];
 
     // Private
     private readonly _unsubscribeAll: Subject<void>;
     private readonly systemPrefersDark: boolean;
+    private temperatureRequestID = 0;
     @ViewChild('tempChart', { static: false }) tempChart: ChartComponent;
 
     /**
@@ -131,9 +152,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
         });
 
         // Get the data
-        this._dashboardService.data$.pipe(takeUntil(this._unsubscribeAll)).subscribe((data) => {
+        this._dashboardService.pageData$.pipe(takeUntil(this._unsubscribeAll)).subscribe((data) => {
+            if (!data) {
+                return;
+            }
+
             // Store the data
-            this.summaryData = data;
+            this.summaryData = data.summary;
+            this.pagination = data.pagination;
+            this.hostGroups = {};
 
             // generate group data.
             for (const wwn in this.summaryData) {
@@ -141,13 +168,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 const hostDeviceList = this.hostGroups[hostid] || [];
                 hostDeviceList.push(wwn);
                 this.hostGroups[hostid] = hostDeviceList;
-
-                // Initialize drive visibility (default to visible)
-                this.visibleDrives[wwn] ??= true;
             }
             // Prepare the chart data
             this._prepareChartData();
+            this._changeDetectorRef.markForCheck();
         });
+        this._dashboardService
+            .getTemperatureDeviceOptions()
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe((devices) => {
+                this.temperatureDevices = devices;
+                if (this.temperatureSelection.ids.length > 0) {
+                    this.loadSelectedTemperatureHistory();
+                }
+                this._changeDetectorRef.markForCheck();
+            });
 
         // Get MDADM data
         this._mdadmService
@@ -201,33 +236,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private _deviceDataTemperatureSeries(): any[] {
         const deviceTemperatureSeries = [];
 
-        for (const wwn in this.summaryData) {
-            // Skip drives that are hidden by the filter
-            if (this.visibleDrives[wwn] === false) {
+        for (const deviceID of this.temperatureSelection.ids) {
+            const tempHistory = this.temperatureHistory[deviceID];
+            if (!tempHistory) {
                 continue;
             }
 
-            const deviceSummary = this.summaryData[wwn];
-            if (!deviceSummary.temp_history) {
-                continue;
-            }
-
-            const deviceName = DeviceTitlePipe.deviceDashboardTitle(deviceSummary.device);
+            const deviceName = this.temperatureDeviceTitle(this.temperatureDevices.find((device) => device.device_id === deviceID));
 
             const deviceSeriesMetadata = {
                 name: deviceName,
                 data: [],
             };
 
-            for (const tempHistory of deviceSummary.temp_history) {
-                const newDate = new Date(tempHistory.date);
+            for (const measurement of tempHistory) {
+                const newDate = new Date(measurement.date);
                 let temperature;
                 switch (this.config.temperature_unit) {
                     case 'celsius':
-                        temperature = tempHistory.temp;
+                        temperature = measurement.temp;
                         break;
                     case 'fahrenheit':
-                        temperature = TemperaturePipe.celsiusToFahrenheit(tempHistory.temp);
+                        temperature = TemperaturePipe.celsiusToFahrenheit(measurement.temp);
                         break;
                 }
                 deviceSeriesMetadata.data.push({
@@ -482,16 +512,45 @@ export class DashboardComponent implements OnInit, OnDestroy {
         dialogRef.afterClosed().subscribe();
     }
 
-    onDeviceDeleted(wwn: string): void {
-        delete this.summaryData[wwn]; // remove the device from the summary list.
+    onDeviceDeleted(_deviceId: string): void {
+        const remainingItems = Math.max(0, this.pagination.total_items - 1);
+        const lastPage = Math.max(1, Math.ceil(remainingItems / this.pagination.page_size));
+        this.loadSummaryPage(Math.min(this.pagination.page, lastPage));
     }
 
-    onDeviceArchived(wwn: string): void {
-        this.summaryData[wwn].device.archived = true;
+    onDeviceArchived(_deviceId: string): void {
+        this.loadSummaryPage(1);
     }
 
-    onDeviceUnarchived(wwn: string): void {
-        this.summaryData[wwn].device.archived = false;
+    onDeviceUnarchived(_deviceId: string): void {
+        this.loadSummaryPage(1);
+    }
+
+    toggleArchived(): void {
+        this.showArchived = !this.showArchived;
+        this.loadSummaryPage(1);
+    }
+
+    onPageChange(event: PageEvent): void {
+        const pageSize = event.pageSize as DashboardPageSize;
+        if (pageSize !== this.pagination.page_size) {
+            this.config = { ...this.config, dashboard_page_size: pageSize };
+            this._configService.config = { dashboard_page_size: pageSize };
+        }
+        this.loadSummaryPage(event.pageIndex + 1, pageSize);
+    }
+
+    private loadSummaryPage(page: number, pageSize?: DashboardPageSize): void {
+        this._dashboardService
+            .getSummaryPage({
+                page,
+                pageSize: pageSize ?? (this.pagination.page_size as DashboardPageSize),
+                archived: this.showArchived,
+                sort: this.config?.dashboard_sort,
+                display: this.config?.dashboard_display,
+            })
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe();
     }
 
     dashboardColumns(): DashboardColumns {
@@ -514,29 +573,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
         return this.dashboardDensity() === 'compact';
     }
 
-    get allDrivesVisible(): boolean {
-        const wwns = Object.keys(this.visibleDrives);
-        return wwns.length > 0 && wwns.every((wwn) => this.visibleDrives[wwn]);
-    }
-
-    get someDrivesVisible(): boolean {
-        const wwns = Object.keys(this.visibleDrives);
-        return wwns.some((wwn) => this.visibleDrives[wwn]);
-    }
-
-    toggleAllDrives(): void {
-        const newState = !this.allDrivesVisible;
-        for (const wwn in this.visibleDrives) {
-            this.visibleDrives[wwn] = newState;
+    filteredTemperatureDevices(): TemperatureDeviceOption[] {
+        const search = this.temperatureDeviceSearch.trim().toLowerCase();
+        if (!search) {
+            return this.temperatureDevices;
         }
-        this.tempChart?.updateSeries(this._deviceDataTemperatureSeries());
-        this._changeDetectorRef.markForCheck();
+        return this.temperatureDevices.filter((device) => {
+            return [device.host_id, device.label, device.device_name, device.model_name, device.serial_number].some((value) => value?.toLowerCase().includes(search));
+        });
     }
 
-    toggleDriveVisibility(wwn: string): void {
-        this.visibleDrives[wwn] = !this.visibleDrives[wwn];
-        this.tempChart?.updateSeries(this._deviceDataTemperatureSeries());
-        this._changeDetectorRef.markForCheck();
+    temperatureDeviceTitle(device?: TemperatureDeviceOption): string {
+        if (!device) {
+            return 'Unknown drive';
+        }
+        const title = device.label || [device.device_name ? `/dev/${device.device_name.replace(/^\/dev\//, '')}` : '', device.model_name].filter(Boolean).join(' - ');
+        return device.host_id ? `${device.host_id}: ${title || device.serial_number || device.device_id}` : title || device.serial_number || device.device_id;
+    }
+
+    isTemperatureDeviceSelected(deviceID: string): boolean {
+        return this.temperatureSelection.has(deviceID);
+    }
+
+    temperatureSelectionDisabled(deviceID: string): boolean {
+        return !this.temperatureSelection.has(deviceID) && this.temperatureSelection.ids.length >= this.temperatureSelection.maxSelected;
+    }
+
+    toggleTemperatureDevice(deviceID: string): void {
+        this.temperatureSelection.toggle(deviceID);
+        this.loadSelectedTemperatureHistory();
     }
 
     /*
@@ -549,16 +614,29 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     changeSummaryTempDuration(durationKey: string): void {
         this.tempDurationKey = durationKey;
+        this.loadSelectedTemperatureHistory();
+    }
 
-        this._dashboardService.getSummaryTempData(durationKey).subscribe((tempHistoryData) => {
-            // given a list of device temp history, override the data in the "summary" object.
-            for (const wwn in this.summaryData) {
-                this.summaryData[wwn].temp_history = tempHistoryData[wwn] || [];
-            }
-
-            // Prepare the chart series data (filtered by visibility)
-            this.tempChart.updateSeries(this._deviceDataTemperatureSeries());
-        });
+    private loadSelectedTemperatureHistory(): void {
+        const selectedDeviceIDs = this.temperatureSelection.ids;
+        const requestID = ++this.temperatureRequestID;
+        if (selectedDeviceIDs.length === 0) {
+            this.temperatureHistory = {};
+            this.tempChart?.updateSeries([]);
+            this._changeDetectorRef.markForCheck();
+            return;
+        }
+        this._dashboardService
+            .getSummaryTempData(this.tempDurationKey, selectedDeviceIDs)
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe((tempHistoryData) => {
+                if (requestID !== this.temperatureRequestID) {
+                    return;
+                }
+                this.temperatureHistory = tempHistoryData;
+                this.tempChart?.updateSeries(this._deviceDataTemperatureSeries());
+                this._changeDetectorRef.markForCheck();
+            });
     }
 
     getMdadmArrayStatusColorClass(array: MDADMArrayModel): string {
