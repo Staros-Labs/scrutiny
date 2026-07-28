@@ -11,7 +11,7 @@
 
                 <!-- Action buttons (desktop) -->
                 <div class="flex items-center">
-                    <button class="xs:hidden" mat-stroked-button [color]="showArchived ? 'primary' : null" (click)="showArchived = !showArchived">
+                    <button class="xs:hidden" mat-stroked-button [color]="showArchived ? 'primary' : null" (click)="toggleArchived()">
                         <mat-icon class="icon-size-20" [color]="showArchived ? 'primary' : null" [svgIcon]="'archive'"> </mat-icon>
                         <span class="ml-2">Archived</span>
                     </button>
@@ -49,7 +49,7 @@
                         </button>
 
                         <mat-menu #actionsMenu="matMenu">
-                            <button mat-menu-item (click)="showArchived = !showArchived">
+                            <button mat-menu-item (click)="toggleArchived()">
                                 <mat-icon class="icon-size-20" [color]="showArchived ? 'primary' : null" [svgIcon]="'archive'"> </mat-icon>
                                 <span class="ml-2">Archived</span>
                             </button>
@@ -104,6 +104,19 @@
                 </div>
             </div>
             }
+
+            <div class="flex w-full justify-end px-4 mb-6">
+                <mat-paginator
+                    [length]="pagination.total_items"
+                    [pageIndex]="pagination.page - 1"
+                    [pageSize]="pagination.page_size"
+                    [pageSizeOptions]="pageSizeOptions"
+                    [showFirstLastButtons]="true"
+                    aria-label="Select SMART device page"
+                    (page)="onPageChange($event)"
+                >
+                </mat-paginator>
+            </div>
 
             <!-- MDADM RAID Arrays -->
             @if (mdadmArrays.length > 0) {

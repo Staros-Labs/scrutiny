@@ -23,7 +23,7 @@ describe('MobileTabBarComponent', () => {
             imports: [MobileTabBarComponent],
             providers: [
                 { provide: Router, useValue: routerSpy },
-                { provide: DashboardService, useValue: { data$: of(null) } },
+                { provide: DashboardService, useValue: { data$: of(null), pageData$: of(null) } },
                 { provide: ScrutinyConfigService, useValue: { config$: of(appConfig) } },
             ],
         }).compileComponents();

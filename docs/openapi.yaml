@@ -173,6 +173,38 @@ paths:
     get:
       tags: [Devices]
       summary: Get dashboard device summary
+      description: Without `page`, returns the legacy unpaginated summary. Supplying `page` enables global device pagination while retaining host-first ordering.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+          description: One-based page number. Omit for the legacy unpaginated response.
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            enum: [25, 50, 100, 250]
+          description: Devices per page. Defaults to the saved dashboard setting.
+        - name: archived
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Return archived devices instead of active devices.
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [status, status_asc, status_desc, title, title_asc, title_desc, age, age_asc, age_desc, capacity_asc, capacity_desc, temperature_asc, temperature_desc]
+          description: Dashboard device sort. Defaults to the saved dashboard setting.
+        - name: display
+          in: query
+          schema:
+            type: string
+            enum: [name, serial_id, uuid, label]
+          description: Title source used by title sorting. Defaults to the saved dashboard setting.
       responses:
         "200":
           description: Device summary payload
@@ -180,6 +212,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DeviceSummaryWrapper"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
         "500":
           $ref: "#/components/responses/ErrorResponse"
   /api/summary/temp:
@@ -1820,6 +1854,10 @@ components:
           type: integer
         dashboard_density:
           type: string
+        dashboard_page_size:
+          type: integer
+          enum: [25, 50, 100, 250]
+          default: 25
         temperature_unit:
           type: string
         line_stroke:
@@ -2752,6 +2790,27 @@ components:
               type: object
               additionalProperties:
                 $ref: "#/components/schemas/DeviceSummary"
+            pagination:
+              $ref: "#/components/schemas/PaginationMetadata"
+    PaginationMetadata:
+      type: object
+      required: [page, page_size, total_items, total_pages, attention_count]
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        page_size:
+          type: integer
+          enum: [25, 50, 100, 250]
+        total_items:
+          type: integer
+          minimum: 0
+        total_pages:
+          type: integer
+          minimum: 0
+        attention_count:
+          type: integer
+          minimum: 0
     DeviceSummary:
       type: object
       properties:

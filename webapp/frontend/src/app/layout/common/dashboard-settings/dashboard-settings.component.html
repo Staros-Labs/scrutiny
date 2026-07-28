@@ -78,6 +78,17 @@
                 </mat-select>
                 <mat-hint>Compact reduces dashboard card spacing and padding.</mat-hint>
             </mat-form-field>
+
+            <mat-form-field class="flex-auto gt-xs:pr-3 gt-md:pl-3">
+                <mat-label>Devices Per Page</mat-label>
+                <mat-select [(ngModel)]="dashboardPageSize">
+                    <mat-option [value]="25">25 Devices</mat-option>
+                    <mat-option [value]="50">50 Devices</mat-option>
+                    <mat-option [value]="100">100 Devices</mat-option>
+                    <mat-option [value]="250">250 Devices</mat-option>
+                </mat-select>
+                <mat-hint>Maximum SMART device cards rendered on one dashboard page.</mat-hint>
+            </mat-form-field>
         </div>
 
         <div class="flex flex-col mt-5 gt-md:flex-row">
