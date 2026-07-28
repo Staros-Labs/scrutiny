@@ -1,0 +1,13 @@
+version: 1
+devices:
+  # QNAP TR-004 in Individual mode. A single bay addressed with the scalar form.
+  - device: /dev/sda
+    type: 'jmb39x-q,0'
+  # All four bays of one enclosure, each its own smartctl device type on the same
+  # device file.
+  - device: /dev/sdb
+    type:
+      - 'jmb39x-q,0'
+      - 'jmb39x-q,1'
+      - 'jmb39x-q,2'
+      - 'jmb39x-q,3'

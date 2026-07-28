@@ -179,18 +179,60 @@ func collectorCommandFlags(args []string) (containsJSONFlag bool, containsDevice
 }
 
 func (c *configuration) GetDeviceOverrides() []models.ScanOverride {
-	// we have to support 2 types of device types.
-	// - simple device type (device_type: 'sat')
-	// and list of device types (type: \n- 3ware,0 \n- 3ware,1 \n- 3ware,2)
-	// GetString will return "" if this is a list of device types.
-
+	// We support 2 shapes for a device's type:
+	// - a single device type   (type: 'sat')
+	// - a list of device types (type: \n- 3ware,0 \n- 3ware,1 \n- 3ware,2)
+	//
+	// A comma is part of the smartctl device-type grammar ('megaraid,14',
+	// 'sat,auto', 'jmb39x-q,0'), not a separator between types. Viper's default
+	// decode hook splits a scalar string on ',' when the destination is a slice,
+	// which turns 'jmb39x-q,0' into the two bogus types 'jmb39x-q' and '0'.
+	// Override the hook so WeaklyTypedInput simply lifts the scalar into a
+	// one-element slice verbatim; a YAML list still yields one entry per item.
+	// Fixes #418, #663.
 	if c.deviceOverrides == nil {
 		overrides := []models.ScanOverride{}
-		c.UnmarshalKey("devices", &overrides, func(c *mapstructure.DecoderConfig) { c.WeaklyTypedInput = true })
-		c.deviceOverrides = overrides
+		err := c.UnmarshalKey("devices", &overrides, func(decoderConfig *mapstructure.DecoderConfig) {
+			decoderConfig.WeaklyTypedInput = true
+			decoderConfig.DecodeHook = mapstructure.ComposeDecodeHookFunc(
+				mapstructure.StringToTimeDurationHookFunc(),
+			)
+		})
+		if err != nil {
+			logrus.Errorf("Could not parse the 'devices' section of the collector config; no device overrides will be applied: %v", err)
+			c.deviceOverrides = []models.ScanOverride{}
+			return c.deviceOverrides
+		}
+		c.deviceOverrides = normalizeDeviceOverrides(overrides)
 	}
 
 	return c.deviceOverrides
+}
+
+// normalizeDeviceOverrides trims surrounding whitespace from every configured
+// device type and drops the empty ones. Whitespace matters because the type is
+// handed verbatim to smartctl's --device flag. Empty entries matter because the
+// decode hook removed above used to map an explicitly empty type to an empty
+// slice, whereas WeaklyTypedInput lifting maps it to a slice holding one empty
+// string.
+//
+// An all-empty type deliberately becomes an empty (but non-nil) slice, matching
+// the old behavior so that buildOverrideDeviceGroup keeps dropping the device
+// rather than falling back to the scanned type.
+func normalizeDeviceOverrides(overrides []models.ScanOverride) []models.ScanOverride {
+	for i := range overrides {
+		if overrides[i].DeviceType == nil {
+			continue
+		}
+		cleaned := make([]string, 0, len(overrides[i].DeviceType))
+		for _, deviceType := range overrides[i].DeviceType {
+			if trimmed := strings.TrimSpace(deviceType); trimmed != "" {
+				cleaned = append(cleaned, trimmed)
+			}
+		}
+		overrides[i].DeviceType = cleaned
+	}
+	return overrides
 }
 
 func (c *configuration) GetCommandMetricsInfoArgs(deviceName string) string {

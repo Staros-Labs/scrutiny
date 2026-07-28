@@ -10,6 +10,7 @@ import { RouterLink } from '@angular/router';
 import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
+import { MenuTriggerRestoreFocusDirective } from 'app/shared/menu-trigger-restore-focus.directive';
 
 dayjs.extend(relativeTime);
 
@@ -17,7 +18,7 @@ dayjs.extend(relativeTime);
     selector: 'app-btrfs-filesystem-card',
     templateUrl: './btrfs-filesystem-card.component.html',
     styleUrls: ['./btrfs-filesystem-card.component.scss'],
-    imports: [NgClass, RouterLink, MatIcon, MatIconButton, MatMenuTrigger, MatMenu, MatMenuItem, DatePipe],
+    imports: [NgClass, RouterLink, MatIcon, MatIconButton, MatMenuTrigger, MenuTriggerRestoreFocusDirective, MatMenu, MatMenuItem, DatePipe],
 })
 export class BtrfsFilesystemCardComponent {
     private readonly _btrfsFilesystemsService = inject(BtrfsFilesystemsService);

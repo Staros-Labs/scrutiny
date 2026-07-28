@@ -16,6 +16,7 @@ import { MatIcon } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { MatIconButton } from '@angular/material/button';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
+import { MenuTriggerRestoreFocusDirective } from 'app/shared/menu-trigger-restore-focus.directive';
 import { FileSizePipe } from '../../../shared/file-size.pipe';
 import { TemperaturePipe } from '../../../shared/temperature.pipe';
 import { DeviceHoursPipe } from '../../../shared/device-hours.pipe';
@@ -24,7 +25,21 @@ import { DeviceHoursPipe } from '../../../shared/device-hours.pipe';
     selector: 'app-dashboard-device',
     templateUrl: './dashboard-device.component.html',
     styleUrls: ['./dashboard-device.component.scss'],
-    imports: [NgClass, MatIcon, RouterLink, MatIconButton, MatMenuTrigger, MatMenu, MatMenuItem, TitleCasePipe, DatePipe, FileSizePipe, TemperaturePipe, DeviceHoursPipe],
+    imports: [
+        NgClass,
+        MatIcon,
+        RouterLink,
+        MatIconButton,
+        MatMenuTrigger,
+        MenuTriggerRestoreFocusDirective,
+        MatMenu,
+        MatMenuItem,
+        TitleCasePipe,
+        DatePipe,
+        FileSizePipe,
+        TemperaturePipe,
+        DeviceHoursPipe,
+    ],
 })
 export class DashboardDeviceComponent implements OnInit {
     private readonly _configService = inject(ScrutinyConfigService);

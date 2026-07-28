@@ -51,14 +51,31 @@ host:
 # Scrutiny via `smartctl --scan`
 # See the "--device=TYPE" section of https://linux.die.net/man/8/smartctl
 # type can be a 'string' or a 'list'
+#
+# A type set here is passed to smartctl verbatim as '-d <type>' on every call made for
+# that device, including the standard 'scsi' and 'ata' types. A type that only came from
+# `smartctl --scan` is treated as a guess: 'scsi' and 'ata' are dropped so smartctl can
+# auto-detect, because container scans routinely label ATA disks as SCSI.
 devices:
-#  # example for forcing device type detection for a single disk
+#  # example for forcing device type detection for a single disk. Some Hitachi and
+#  # Toshiba drives report a false failure and zero SMART values under auto-detection
+#  # and need this; see docs/TROUBLESHOOTING_DEVICE_COLLECTOR.md
 #  - device: /dev/sda
 #    type: 'sat'
 #
-#  # example for using `-d sat,auto`, notice the square brackets (workaround for #418)
+#  # a device type containing a comma is still a single type, so quote it and leave
+#  # it as a plain value. A list is only needed to give one device several types.
 #  - device: /dev/sda
-#    type: ['sat,auto']
+#    type: 'sat,auto'
+#
+#  # example for a QNAP TR-004 (or other JMicron JMB39x enclosure) in Individual
+#  # mode: every bay is addressed through the same device file, with its own type.
+#  - device: /dev/sdb
+#    type:
+#      - 'jmb39x-q,0'
+#      - 'jmb39x-q,1'
+#      - 'jmb39x-q,2'
+#      - 'jmb39x-q,3'
 #
 #  # example to show how to ignore a specific disk/device.
 #  - device: /dev/sda

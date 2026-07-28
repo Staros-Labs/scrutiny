@@ -14,6 +14,7 @@ import (
 	"github.com/analogj/scrutiny/collector/pkg/config"
 	"github.com/analogj/scrutiny/collector/pkg/models"
 	"github.com/analogj/scrutiny/webapp/backend/pkg/models/collector"
+	"github.com/analogj/scrutiny/webapp/backend/pkg/smartctl"
 	"github.com/analogj/scrutiny/webapp/backend/pkg/version"
 	"github.com/sirupsen/logrus"
 )
@@ -77,6 +78,64 @@ func normalizeDeviceName(deviceName string) string {
 	return strings.TrimSpace(stripDevicePrefix(deviceName))
 }
 
+// isAutoDetectedDeviceType reports whether a device type is one that smartctl
+// determines on its own just as well as we can. "ata" and "scsi" are the two
+// values `smartctl --scan` hands back for ordinary disks, and in docker an ATA
+// drive is frequently reported as scsi; forcing "--device scsi" on it loses
+// metadata. "nvme" is not in this set because it has always been passed through.
+func isAutoDetectedDeviceType(deviceType string) bool {
+	switch strings.ToLower(strings.TrimSpace(deviceType)) {
+	case "ata", "scsi":
+		return true
+	default:
+		return false
+	}
+}
+
+// IsConfiguredDeviceType reports whether deviceType was written by the user in the
+// 'devices' section of collector.yaml for fullDeviceName, rather than derived from
+// `smartctl --scan`. The device path is matched case-insensitively, matching
+// config.GetCommandMetricsInfoArgs; the type is matched trimmed and
+// case-insensitively, because the configured value is what ends up in
+// models.Device.DeviceType verbatim.
+func IsConfiguredDeviceType(overrides []models.ScanOverride, fullDeviceName string, deviceType string) bool {
+	wanted := strings.ToLower(strings.TrimSpace(deviceType))
+	if wanted == "" {
+		return false
+	}
+	for _, override := range overrides {
+		if !strings.EqualFold(strings.TrimSpace(override.Device), strings.TrimSpace(fullDeviceName)) {
+			continue
+		}
+		for _, configuredType := range override.DeviceType {
+			if strings.ToLower(strings.TrimSpace(configuredType)) == wanted {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// AppendDeviceTypeArgs appends "--device <type>" to args when the type has to reach
+// smartctl. A type written in collector.yaml is always passed verbatim, including
+// "ata" and "scsi", because an explicit type is the documented remedy for drives
+// (some Hitachi and Toshiba models) that report a false failure and zero SMART
+// values under auto-detection. A type that only came from `smartctl --scan` keeps
+// the historical behavior and is suppressed when it is "ata" or "scsi".
+//
+// This is the single place where the device type is turned into smartctl arguments;
+// the detection, SMART collection and FARM calls all route through it so they cannot
+// drift apart. Fixes #664.
+func AppendDeviceTypeArgs(args []string, overrides []models.ScanOverride, fullDeviceName string, deviceType string) []string {
+	if strings.TrimSpace(deviceType) == "" {
+		return args
+	}
+	if !IsConfiguredDeviceType(overrides, fullDeviceName, deviceType) && isAutoDetectedDeviceType(deviceType) {
+		return args
+	}
+	return append(args, "--device", deviceType)
+}
+
 //private/common functions
 
 // This function calls smartctl --scan which can be used to detect storage devices.
@@ -119,35 +178,40 @@ func (d *Detect) SmartCtlInfo(device *models.Device) error {
 	}
 	fullDeviceName := DeviceFullPath(device.DeviceName)
 	args := strings.Split(d.Config.GetCommandMetricsInfoArgs(fullDeviceName), " ")
-	//only include the device type if its a non-standard one. In some cases ata drives are detected as scsi in docker, and metadata is lost.
-	if len(device.DeviceType) > 0 && device.DeviceType != "scsi" && device.DeviceType != "ata" {
-		args = append(args, "--device", device.DeviceType)
-	}
+	args = AppendDeviceTypeArgs(args, d.Config.GetDeviceOverrides(), fullDeviceName, device.DeviceType)
 	args = append(args, fullDeviceName)
 
 	timeout := time.Duration(d.Config.GetInt("commands.metrics_smartctl_timeout")) * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	availableDeviceInfoJson, err := d.Shell.CommandContext(ctx, d.Logger, d.Config.GetString("commands.metrics_smartctl_bin"), args, "", os.Environ())
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
-		exitCode := exitErr.ExitCode()
-		if exitCode&0xBF == 0 {
-			d.Logger.Warnf("Successfully retrieved device information for %s, but received exit code %d, which is a non-fatal exit code. Continuing.", device.DeviceName, exitCode)
-		} else {
+	if err != nil {
+		var exitErr *exec.ExitError
+		if !errors.As(err, &exitErr) {
+			// not a smartctl exit status at all (binary missing, context deadline, ...), so there is no output to salvage.
 			d.Logger.Errorf("Could not retrieve device information for %s: %v", device.DeviceName, err)
 			return err
 		}
+		exitCode := exitErr.ExitCode()
+		if smartctl.IsFatal(exitCode) {
+			d.Logger.Errorf("Could not retrieve device information for %s: smartctl exited with fatal code %d: %v", device.DeviceName, exitCode, err)
+			return err
+		}
+		// Every non-fatal bit describes a condition of the disk rather than of the
+		// output, and smartctl still prints a complete JSON document alongside it.
+		// QNAP TR-004 enclosures behind the jmb39x-q backend report
+		// "Read Device Statistics page 0x00 failed" and exit 4 on every run.
+		d.Logger.Warnf("smartctl returned non-fatal exit code %d while reading device information for %s; using the returned JSON", exitCode, device.DeviceName)
 	}
 
-	if err != nil {
-		d.Logger.Errorf("Could not retrieve device information for %s: %v", device.DeviceName, err)
-		return err
+	if strings.TrimSpace(availableDeviceInfoJson) == "" {
+		d.Logger.Errorf("Could not retrieve device information for %s: smartctl returned no output", device.DeviceName)
+		return fmt.Errorf("smartctl returned no output for device %s", device.DeviceName)
 	}
 
 	var availableDeviceInfo collector.SmartInfo
-	err = json.Unmarshal([]byte(availableDeviceInfoJson), &availableDeviceInfo)
-	if err != nil {
+	// shadow err deliberately: the outer err may still hold a tolerated *exec.ExitError.
+	if err := json.Unmarshal([]byte(availableDeviceInfoJson), &availableDeviceInfo); err != nil {
 		d.Logger.Errorf("Could not decode device information for %s: %v", device.DeviceName, err)
 		return err
 	}

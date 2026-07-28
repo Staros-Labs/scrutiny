@@ -1,0 +1,6 @@
+version: 1
+devices:
+  # An explicitly empty type must stay an empty (but non-nil) list, so the device
+  # is dropped rather than falling back to the scanned type.
+  - device: /dev/sda
+    type: ''

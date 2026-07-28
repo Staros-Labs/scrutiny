@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/analogj/scrutiny/webapp/backend/pkg/smartctl"
 	"github.com/sirupsen/logrus"
 )
 
@@ -122,32 +123,32 @@ func drainAndClose(body io.ReadCloser) {
 }
 
 // LogSmartctlExitCode logs each set bit in the smartctl exit code bitmask.
-// Fatal bits (0x01, 0x02) are logged at ERROR; health-related bits (0x08,
-// 0x10, 0x20) at WARN; purely informational bits (0x04, 0x40, 0x80) at INFO.
-// http://www.linuxguide.it/command_line/linux-manpage/do.php?file=smartctl#sect7
+// The fatal bits are logged at ERROR; health-related bits at WARN; purely
+// informational bits at INFO. See webapp/backend/pkg/smartctl for the bit
+// definitions and for which of them are considered fatal.
 func (c *BaseCollector) LogSmartctlExitCode(exitCode int, deviceName string) {
-	if exitCode&0x01 != 0 {
+	if exitCode&smartctl.ExitCommandLineError != 0 {
 		c.logger.Errorf("smartctl could not parse command line for %s", deviceName)
 	}
-	if exitCode&0x02 != 0 {
+	if exitCode&smartctl.ExitDeviceOpenFailed != 0 {
 		c.logger.Errorf("smartctl could not open device %s", deviceName)
 	}
-	if exitCode&0x04 != 0 {
+	if exitCode&smartctl.ExitChecksumError != 0 {
 		c.logger.Infof("smartctl detected a checksum error for %s (bit 0x04)", deviceName)
 	}
-	if exitCode&0x08 != 0 {
+	if exitCode&smartctl.ExitDiskFailing != 0 {
 		c.logger.Warnf("smartctl detected a failing disk for %s (bit 0x08)", deviceName)
 	}
-	if exitCode&0x10 != 0 {
+	if exitCode&smartctl.ExitPrefailBelowThreshold != 0 {
 		c.logger.Warnf("smartctl detected a disk in pre-fail for %s (bit 0x10)", deviceName)
 	}
-	if exitCode&0x20 != 0 {
+	if exitCode&smartctl.ExitUsageBelowThreshold != 0 {
 		c.logger.Warnf("smartctl detected a disk close to failure for %s (bit 0x20)", deviceName)
 	}
-	if exitCode&0x40 != 0 {
+	if exitCode&smartctl.ExitErrorLogHasRecords != 0 {
 		c.logger.Infof("smartctl error log contains records of errors for %s (bit 0x40)", deviceName)
 	}
-	if exitCode&0x80 != 0 {
+	if exitCode&smartctl.ExitSelfTestLogHasErrors != 0 {
 		c.logger.Infof("smartctl self-test log contains errors for %s (bit 0x80)", deviceName)
 	}
 }
