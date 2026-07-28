@@ -20,6 +20,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
+import { MenuTriggerRestoreFocusDirective } from 'app/shared/menu-trigger-restore-focus.directive';
 import { DashboardDeviceComponent } from '../../layout/common/dashboard-device/dashboard-device.component';
 import { DOCUMENT, NgClass, DecimalPipe, TitleCasePipe, DatePipe, KeyValuePipe } from '@angular/common';
 import { MatCheckbox } from '@angular/material/checkbox';
@@ -47,6 +48,7 @@ const DASHBOARD_SHELL_WIDTHS: Record<DashboardColumns, string> = {
         MatProgressSpinner,
         MatIconButton,
         MatMenuTrigger,
+        MenuTriggerRestoreFocusDirective,
         MatMenu,
         MatMenuItem,
         DashboardDeviceComponent,

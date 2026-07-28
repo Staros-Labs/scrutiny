@@ -47,6 +47,7 @@ import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
+import { MenuTriggerRestoreFocusDirective } from 'app/shared/menu-trigger-restore-focus.directive';
 import { TreoCardComponent } from '../../../@treo/components/card/card.component';
 import { MatButtonToggleGroup, MatButtonToggle } from '@angular/material/button-toggle';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -80,6 +81,7 @@ const AttributeStatusFailedScrutiny = 4;
         MatTooltip,
         MatButton,
         MatMenuTrigger,
+        MenuTriggerRestoreFocusDirective,
         MatMenu,
         MatMenuItem,
         TreoCardComponent,
