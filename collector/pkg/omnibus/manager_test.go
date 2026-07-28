@@ -21,7 +21,7 @@ type fakeRunner struct {
 	errs    map[string]error
 }
 
-func (r *fakeRunner) Run(ctx context.Context, spec CollectorSpec, _ CollectorConfig, _ string) error {
+func (r *fakeRunner) Run(ctx context.Context, spec *CollectorSpec, _ CollectorConfig, _ string) error {
 	r.calls <- runnerCall{name: spec.Name}
 	if r.release != nil {
 		select {

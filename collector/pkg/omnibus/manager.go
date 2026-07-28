@@ -112,7 +112,7 @@ func (m *Manager) runStartupCollectors(ctx context.Context) {
 	}
 }
 
-func (m *Manager) launch(ctx context.Context, spec CollectorSpec) {
+func (m *Manager) launch(ctx context.Context, spec *CollectorSpec) {
 	m.wg.Add(1)
 	go func() {
 		defer m.wg.Done()
@@ -120,7 +120,7 @@ func (m *Manager) launch(ctx context.Context, spec CollectorSpec) {
 	}()
 }
 
-func (m *Manager) execute(ctx context.Context, spec CollectorSpec) {
+func (m *Manager) execute(ctx context.Context, spec *CollectorSpec) {
 	state := m.running[spec.Name]
 	if !state.CompareAndSwap(false, true) {
 		m.logger.WithField("collector", spec.Name).Warn("collector run skipped because previous run is still active")

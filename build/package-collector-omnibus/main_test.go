@@ -17,7 +17,7 @@ func TestCreateArchiveUnixIncludesCanonicalBundleLayout(t *testing.T) {
 	sourceDir := packageFixture(t, "linux-amd64", "")
 	outputDir := t.TempDir()
 
-	path, err := createArchive(packageOptions{
+	path, err := createArchive(&packageOptions{
 		sourceDir:  sourceDir,
 		outputDir:  outputDir,
 		targetOS:   "linux",
@@ -41,7 +41,7 @@ func TestCreateArchiveWindowsUsesZipAndExeNames(t *testing.T) {
 	sourceDir := packageFixture(t, "windows-arm64", ".exe")
 	outputDir := t.TempDir()
 
-	path, err := createArchive(packageOptions{
+	path, err := createArchive(&packageOptions{
 		sourceDir:  sourceDir,
 		outputDir:  outputDir,
 		targetOS:   "windows",

@@ -24,7 +24,7 @@ type CollectorSpec struct {
 }
 
 // CollectorSpecs is the stable execution and startup order for bundled collectors.
-var CollectorSpecs = []CollectorSpec{
+var CollectorSpecs = []*CollectorSpec{
 	{
 		Name:             "metrics",
 		BinaryName:       "scrutiny-collector-metrics",
@@ -199,7 +199,7 @@ func (cfg Config) Validate() error {
 	return nil
 }
 
-func applyEnvironmentOverrides(cfg *CollectorConfig, spec CollectorSpec, lookupEnv LookupEnv) error {
+func applyEnvironmentOverrides(cfg *CollectorConfig, spec *CollectorSpec, lookupEnv LookupEnv) error {
 	enabledExplicitlySet := false
 	if value, ok := lookupEnv(spec.EnabledEnv); ok {
 		parsed, err := strconv.ParseBool(value)

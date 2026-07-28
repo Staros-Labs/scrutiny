@@ -63,7 +63,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "target-os and target-arch are required")
 		os.Exit(2)
 	}
-	archivePath, err := createArchive(options)
+	archivePath, err := createArchive(&options)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "package collector omnibus: %v\n", err)
 		os.Exit(1)
@@ -71,7 +71,7 @@ func main() {
 	fmt.Println(archivePath)
 }
 
-func createArchive(options packageOptions) (string, error) {
+func createArchive(options *packageOptions) (string, error) {
 	platform := options.targetOS + "-" + options.targetArch
 	if options.targetARM != "" {
 		platform += "-" + options.targetARM

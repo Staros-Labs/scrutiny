@@ -11,7 +11,7 @@ import (
 
 // Runner executes one configured collector.
 type Runner interface {
-	Run(context.Context, CollectorSpec, CollectorConfig, string) error
+	Run(context.Context, *CollectorSpec, CollectorConfig, string) error
 }
 
 // ExecRunner runs bundled collector executables as child processes.
@@ -21,7 +21,7 @@ type ExecRunner struct {
 }
 
 // Run starts one collector in run-once mode.
-func (r ExecRunner) Run(ctx context.Context, spec CollectorSpec, cfg CollectorConfig, binaryDir string) error {
+func (r ExecRunner) Run(ctx context.Context, spec *CollectorSpec, cfg CollectorConfig, binaryDir string) error {
 	binaryPath := filepath.Join(binaryDir, executableName(spec.BinaryName))
 	cmd := exec.CommandContext(ctx, binaryPath, "run", "--config", cfg.ConfigPath)
 	cmd.Stdout = r.Stdout
