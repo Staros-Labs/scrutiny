@@ -64,7 +64,14 @@ func UploadDeviceMetrics(c *gin.Context) {
 	}
 
 	// save smart temperature data (InfluxDB - uses WWN)
-	err = deviceRepo.SaveSmartTemperature(c, device.WWN, updatedDevice.DeviceID, &collectorSmartData, appConfig.GetBool(fmt.Sprintf("%s.collector.retrieve_sct_temperature_history", config.DB_USER_SETTINGS_SUBKEY)))
+	err = deviceRepo.SaveSmartTemperature(
+		c,
+		device.WWN,
+		updatedDevice.DeviceID,
+		&collectorSmartData,
+		appConfig.GetBool(fmt.Sprintf("%s.collector.retrieve_sct_temperature_history", config.DB_USER_SETTINGS_SUBKEY)),
+		appConfig.GetBool(fmt.Sprintf("%s.collector.store_temperature_history", config.DB_USER_SETTINGS_SUBKEY)),
+	)
 	if err != nil {
 		logger.Errorln("An error occurred while saving smartctl temp data", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false})

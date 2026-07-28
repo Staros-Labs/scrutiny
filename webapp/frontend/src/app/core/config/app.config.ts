@@ -120,6 +120,7 @@ export interface AppConfig {
 
     collector?: {
         retrieve_sct_temperature_history?: boolean;
+        store_temperature_history?: boolean;
     };
 
     metrics?: {
@@ -201,6 +202,7 @@ export const appConfig: AppConfig = {
 
     collector: {
         retrieve_sct_temperature_history: true,
+        store_temperature_history: true,
     },
 
     navigation: {

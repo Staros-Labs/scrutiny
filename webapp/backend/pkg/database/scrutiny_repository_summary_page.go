@@ -18,7 +18,7 @@ var validDashboardPageSizes = map[int]struct{}{
 }
 
 func (sr *scrutinyRepository) GetSummaryPage(ctx context.Context, options models.DeviceSummaryPageOptions) (*models.DeviceSummaryPage, error) {
-	summaries, err := sr.getSummary(ctx, true)
+	summaries, err := sr.getSummary(ctx, false)
 	if err != nil {
 		return nil, err
 	}

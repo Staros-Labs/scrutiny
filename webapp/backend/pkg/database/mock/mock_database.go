@@ -574,6 +574,21 @@ func (mr *MockDeviceRepoMockRecorder) GetSmartTemperatureHistory(ctx, durationKe
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSmartTemperatureHistory", reflect.TypeOf((*MockDeviceRepo)(nil).GetSmartTemperatureHistory), ctx, durationKey)
 }
 
+// GetSmartTemperatureHistoryForDevices mocks base method.
+func (m *MockDeviceRepo) GetSmartTemperatureHistoryForDevices(ctx context.Context, durationKey string, deviceIDs []string) (map[string][]measurements.SmartTemperature, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSmartTemperatureHistoryForDevices", ctx, durationKey, deviceIDs)
+	ret0, _ := ret[0].(map[string][]measurements.SmartTemperature)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSmartTemperatureHistoryForDevices indicates an expected call of GetSmartTemperatureHistoryForDevices.
+func (mr *MockDeviceRepoMockRecorder) GetSmartTemperatureHistoryForDevices(ctx, durationKey, deviceIDs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSmartTemperatureHistoryForDevices", reflect.TypeOf((*MockDeviceRepo)(nil).GetSmartTemperatureHistoryForDevices), ctx, durationKey, deviceIDs)
+}
+
 // GetSummary mocks base method.
 func (m *MockDeviceRepo) GetSummary(ctx context.Context) (map[string]*models.DeviceSummary, error) {
 	m.ctrl.T.Helper()
@@ -922,17 +937,17 @@ func (mr *MockDeviceRepoMockRecorder) SaveSmartAttributes(ctx, wwn, collectorSma
 }
 
 // SaveSmartTemperature mocks base method.
-func (m *MockDeviceRepo) SaveSmartTemperature(ctx context.Context, wwn, deviceID string, collectorSmartData *collector.SmartInfo, retrieveSCTTemperatureHistory bool) error {
+func (m *MockDeviceRepo) SaveSmartTemperature(ctx context.Context, wwn, deviceID string, collectorSmartData *collector.SmartInfo, retrieveSCTTemperatureHistory, storeTemperatureHistory bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveSmartTemperature", ctx, wwn, deviceID, collectorSmartData, retrieveSCTTemperatureHistory)
+	ret := m.ctrl.Call(m, "SaveSmartTemperature", ctx, wwn, deviceID, collectorSmartData, retrieveSCTTemperatureHistory, storeTemperatureHistory)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SaveSmartTemperature indicates an expected call of SaveSmartTemperature.
-func (mr *MockDeviceRepoMockRecorder) SaveSmartTemperature(ctx, wwn, deviceID, collectorSmartData, retrieveSCTTemperatureHistory interface{}) *gomock.Call {
+func (mr *MockDeviceRepoMockRecorder) SaveSmartTemperature(ctx, wwn, deviceID, collectorSmartData, retrieveSCTTemperatureHistory, storeTemperatureHistory interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSmartTemperature", reflect.TypeOf((*MockDeviceRepo)(nil).SaveSmartTemperature), ctx, wwn, deviceID, collectorSmartData, retrieveSCTTemperatureHistory)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSmartTemperature", reflect.TypeOf((*MockDeviceRepo)(nil).SaveSmartTemperature), ctx, wwn, deviceID, collectorSmartData, retrieveSCTTemperatureHistory, storeTemperatureHistory)
 }
 
 // SaveZFSPoolMetrics mocks base method.

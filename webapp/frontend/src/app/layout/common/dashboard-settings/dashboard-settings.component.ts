@@ -100,6 +100,7 @@ export class DashboardSettingsComponent implements OnInit {
     lineStroke: string;
     theme: string;
     retrieveSCTTemperatureHistory: boolean;
+    storeTemperatureHistory: boolean;
     notifyLevel: number;
     statusThreshold: number;
     statusFilterAttributes: number;
@@ -224,6 +225,7 @@ export class DashboardSettingsComponent implements OnInit {
             this.theme = config.theme;
 
             this.retrieveSCTTemperatureHistory = config.collector.retrieve_sct_temperature_history;
+            this.storeTemperatureHistory = config.collector.store_temperature_history ?? true;
 
             this.notifyLevel = config.metrics.notify_level;
             this.statusFilterAttributes = config.metrics.status_filter_attributes;
@@ -549,6 +551,7 @@ export class DashboardSettingsComponent implements OnInit {
             theme: this.theme as Theme,
             collector: {
                 retrieve_sct_temperature_history: this.retrieveSCTTemperatureHistory,
+                store_temperature_history: this.storeTemperatureHistory,
             },
             metrics: {
                 notify_level: this.notifyLevel as MetricsNotifyLevel,

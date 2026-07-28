@@ -222,6 +222,16 @@ paths:
       summary: Get temperature history for the summary dashboard
       parameters:
         - $ref: "#/components/parameters/DurationKey"
+        - name: device_id
+          in: query
+          description: Device IDs to include. Repeat for each selected drive. Omit to preserve legacy unfiltered behavior.
+          schema:
+            type: array
+            maxItems: 20
+            items:
+              type: string
+          style: form
+          explode: true
       responses:
         "200":
           description: Temperature history
@@ -236,9 +246,38 @@ paths:
                     type: object
                     properties:
                       temp_history:
+                        type: object
+                        additionalProperties:
+                          type: array
+                          items:
+                            $ref: "#/components/schemas/SmartTemperature"
+                required: [success, data]
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/summary/temp/devices:
+    get:
+      tags: [Devices]
+      summary: List active drives available for temperature history selection
+      responses:
+        "200":
+          description: Lightweight temperature drive options
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      devices:
                         type: array
                         items:
-                          $ref: "#/components/schemas/SmartTemperature"
+                          $ref: "#/components/schemas/TemperatureDeviceOption"
+                    required: [devices]
                 required: [success, data]
         "500":
           $ref: "#/components/responses/ErrorResponse"
@@ -1873,6 +1912,10 @@ components:
           properties:
             retrieve_sct_temperature_history:
               type: boolean
+            store_temperature_history:
+              type: boolean
+              default: true
+              description: Store new temperature history points. Disabling retains existing history and current SMART temperatures.
         metrics:
           type: object
           properties:
@@ -2713,6 +2756,23 @@ components:
         high_priority_unload_events:
           type: integer
           format: int64
+    TemperatureDeviceOption:
+      type: object
+      properties:
+        device_id:
+          type: string
+        host_id:
+          type: string
+        label:
+          type: string
+        device_name:
+          type: string
+        model_name:
+          type: string
+        serial_number:
+          type: string
+      required:
+        [device_id, host_id, label, device_name, model_name, serial_number]
     SmartTemperature:
       type: object
       properties:
