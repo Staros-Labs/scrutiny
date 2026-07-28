@@ -157,7 +157,7 @@ func writeZip(outputPath, sourceDir, root string, files []archiveFile) (returnEr
 			Method: zip.Deflate,
 		}
 		header.SetMode(file.mode)
-		header.SetModTime(archiveTimestamp)
+		header.Modified = archiveTimestamp
 		writer, err := zipWriter.CreateHeader(header)
 		if err != nil {
 			return err

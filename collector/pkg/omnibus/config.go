@@ -89,17 +89,17 @@ var CollectorSpecs = []*CollectorSpec{
 
 // CollectorConfig controls one child collector.
 type CollectorConfig struct {
-	Enabled          bool   `yaml:"enabled"`
 	Schedule         string `yaml:"schedule"`
-	RunOnStartup     bool   `yaml:"run_on_startup"`
-	StartupSleepSecs int    `yaml:"startup_sleep_secs"`
 	ConfigPath       string `yaml:"config"`
+	StartupSleepSecs int    `yaml:"startup_sleep_secs"`
+	Enabled          bool   `yaml:"enabled"`
+	RunOnStartup     bool   `yaml:"run_on_startup"`
 }
 
 // Config controls the standalone omnibus manager.
 type Config struct {
-	BinaryDir  string                     `yaml:"binary_dir"`
 	Collectors map[string]CollectorConfig `yaml:"collectors"`
+	BinaryDir  string                     `yaml:"binary_dir"`
 }
 
 // LookupEnv allows deterministic environment override tests.
@@ -119,8 +119,8 @@ func LoadConfig(path, executablePath string, lookupEnv LookupEnv) (Config, error
 	var cfg Config
 	decoder := yaml.NewDecoder(file)
 	decoder.KnownFields(true)
-	if err := decoder.Decode(&cfg); err != nil {
-		return Config{}, fmt.Errorf("decode omnibus config: %w", err)
+	if decodeErr := decoder.Decode(&cfg); decodeErr != nil {
+		return Config{}, fmt.Errorf("decode omnibus config: %w", decodeErr)
 	}
 	if cfg.Collectors == nil {
 		cfg.Collectors = map[string]CollectorConfig{}

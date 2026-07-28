@@ -22,7 +22,7 @@ func main() {
 	app := &cli.App{
 		Name:     "scrutiny-collector-omnibus",
 		Usage:    "schedule and supervise Scrutiny collector binaries",
-		Version:  version.VERSION,
+		Version:  buildVersion(),
 		Compiled: time.Now(),
 		Commands: []*cli.Command{
 			{
@@ -43,6 +43,13 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func buildVersion() string {
+	if goos != "" && goarch != "" {
+		return fmt.Sprintf("%s.%s-%s", goos, goarch, version.VERSION)
+	}
+	return version.VERSION
 }
 
 func configFlags() []cli.Flag {

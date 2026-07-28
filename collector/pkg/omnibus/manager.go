@@ -13,10 +13,10 @@ import (
 
 // Manager schedules and supervises bundled collectors.
 type Manager struct {
-	config  Config
 	runner  Runner
 	logger  *logrus.Entry
 	running map[string]*atomic.Bool
+	config  Config
 	wg      sync.WaitGroup
 }
 
