@@ -1,7 +1,10 @@
 package detect_test
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -222,6 +225,50 @@ func TestDetect_TransformDetectedDevices_Raid(t *testing.T) {
 
 	// assert
 	require.Equal(t, 12, len(transformedDevices))
+}
+
+// fixes #663: a QNAP TR-004 in Individual mode addresses all four bays through one
+// device file, one `jmb39x-q,N` device type per bay.
+func TestDetect_TransformDetectedDevices_Jmb39xIndividualMode(t *testing.T) {
+	// setup
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	fakeConfig := mock_config.NewMockInterface(mockCtrl)
+	fakeConfig.EXPECT().GetString("host.id").AnyTimes().Return("")
+	fakeConfig.EXPECT().IsAllowlistedDevice(gomock.Any()).AnyTimes().Return(true)
+	fakeConfig.EXPECT().GetDeviceOverrides().AnyTimes().Return([]models.ScanOverride{
+		{
+			Device:     "/dev/sda",
+			DeviceType: []string{"jmb39x-q,0", "jmb39x-q,1", "jmb39x-q,2", "jmb39x-q,3"},
+			Ignore:     false,
+		},
+	})
+	detectedDevices := models.Scan{
+		Devices: []models.ScanDevice{
+			{
+				Name:     "/dev/sda",
+				InfoName: "/dev/sda",
+				Protocol: "ATA",
+				Type:     "scsi",
+			},
+		},
+	}
+
+	d := detect.Detect{
+		Config: fakeConfig,
+	}
+
+	// test
+	transformedDevices := d.TransformDetectedDevices(detectedDevices)
+
+	// assert
+	require.Equal(t, 4, len(transformedDevices))
+	deviceTypes := []string{}
+	for _, transformedDevice := range transformedDevices {
+		assert.Equal(t, "sda", transformedDevice.DeviceName)
+		deviceTypes = append(deviceTypes, transformedDevice.DeviceType)
+	}
+	require.Equal(t, []string{"jmb39x-q,0", "jmb39x-q,1", "jmb39x-q,2", "jmb39x-q,3"}, deviceTypes)
 }
 
 func TestDetect_TransformDetectedDevices_Simple(t *testing.T) {
@@ -449,6 +496,148 @@ func TestDetect_SmartCtlInfo(t *testing.T) {
 		require.NotNil(t, someDevice.SmartSupport.Enabled)
 		require.True(t, *someDevice.SmartSupport.Enabled)
 	})
+
+	// fixes #663: a QNAP TR-004 enclosure reports "Read Device Statistics page 0x00
+	// failed" and exits 4 on every run, while still printing a complete JSON document.
+	t.Run("should accept usable JSON on a non-fatal exit status", func(t *testing.T) {
+		fakeShell, fakeConfig, someLogger := setupSmartCtlInfoMocks(t, "sda", "jmb39x-q,0",
+			"testdata/smartctl_info_jmb39x_exit4.json", exitErrorWithCode(t, 4))
+
+		d := detect.Detect{Logger: someLogger, Shell: fakeShell, Config: fakeConfig}
+		someDevice := &models.Device{DeviceName: "sda", DeviceType: "jmb39x-q,0"}
+
+		require.NoError(t, d.SmartCtlInfo(someDevice))
+
+		assert.Equal(t, "WDC WD40EFRX-68N32N0", someDevice.ModelName)
+		assert.Equal(t, "WD-WCC7K0000000", someDevice.SerialNumber)
+		assert.Equal(t, "82.00A82", someDevice.Firmware)
+		assert.Equal(t, int64(4000787030016), someDevice.Capacity)
+		assert.Equal(t, 5400, someDevice.RotationSpeed)
+		// an empty WWN is what produced the "No Data" dashboard: every InfluxDB query
+		// keys on the device_wwn tag.
+		require.NotEmpty(t, someDevice.WWN)
+		assert.Equal(t, strings.ToLower(someDevice.WWN), someDevice.WWN)
+		// invariant: a user-supplied device type is never overwritten by smartctl's own
+		assert.Equal(t, "jmb39x-q,0", someDevice.DeviceType)
+	})
+
+	t.Run("should reject output on a fatal exit status", func(t *testing.T) {
+		fakeShell, fakeConfig, someLogger := setupSmartCtlInfoMocks(t, "sda", "jmb39x-q,0",
+			"testdata/smartctl_info_jmb39x_exit4.json", exitErrorWithCode(t, 2))
+
+		d := detect.Detect{Logger: someLogger, Shell: fakeShell, Config: fakeConfig}
+		someDevice := &models.Device{DeviceName: "sda", DeviceType: "jmb39x-q,0"}
+
+		require.Error(t, d.SmartCtlInfo(someDevice))
+
+		// nothing may be copied out of output we decided not to trust
+		assert.Empty(t, someDevice.ModelName)
+		assert.Empty(t, someDevice.SerialNumber)
+		assert.Empty(t, someDevice.WWN)
+	})
+
+	t.Run("should reject empty output on a non-fatal exit status", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		fakeConfig := mock_config.NewMockInterface(ctrl)
+		fakeConfig.EXPECT().GetCommandMetricsInfoArgs("/dev/sda").Return("--info --json")
+		fakeConfig.EXPECT().GetString("commands.metrics_smartctl_bin").Return("smartctl")
+		fakeConfig.EXPECT().GetInt("commands.metrics_smartctl_timeout").Return(120)
+
+		someLogger := logrus.WithFields(logrus.Fields{})
+		fakeShell := mock_shell.NewMockInterface(ctrl)
+		fakeShell.EXPECT().
+			CommandContext(gomock.Any(), someLogger, "smartctl", gomock.Any(), "", gomock.Any()).
+			Return("   ", exitErrorWithCode(t, 4))
+
+		d := detect.Detect{Logger: someLogger, Shell: fakeShell, Config: fakeConfig}
+		someDevice := &models.Device{DeviceName: "sda"}
+
+		require.Error(t, d.SmartCtlInfo(someDevice))
+	})
+
+	// fixes #663: `jmb39x-q,0` must reach smartctl as one --device argument. The nvme
+	// subtest above uses an empty device type, so it never exercises this branch.
+	t.Run("should pass a comma-containing device type as one --device argument", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		fakeConfig := mock_config.NewMockInterface(ctrl)
+		fakeConfig.EXPECT().GetCommandMetricsInfoArgs("/dev/sda").Return("--info --json")
+		fakeConfig.EXPECT().GetString("commands.metrics_smartctl_bin").Return("smartctl")
+		fakeConfig.EXPECT().GetInt("commands.metrics_smartctl_timeout").Return(120)
+
+		smartctlInfoResults, err := os.ReadFile("testdata/smartctl_info_jmb39x_exit4.json")
+		require.NoError(t, err)
+
+		someLogger := logrus.WithFields(logrus.Fields{})
+		fakeShell := mock_shell.NewMockInterface(ctrl)
+		fakeShell.EXPECT().
+			CommandContext(gomock.Any(), someLogger, "smartctl",
+				[]string{"--info", "--json", "--device", "jmb39x-q,0", "/dev/sda"},
+				"", gomock.Any()).
+			Return(string(smartctlInfoResults), nil)
+
+		d := detect.Detect{Logger: someLogger, Shell: fakeShell, Config: fakeConfig}
+		someDevice := &models.Device{DeviceName: "sda", DeviceType: "jmb39x-q,0"}
+
+		require.NoError(t, d.SmartCtlInfo(someDevice))
+	})
+}
+
+// setupSmartCtlInfoMocks wires a shell that returns the given fixture and error for
+// any smartctl invocation. Use it when the assertion is about the parsed result
+// rather than about the exact argv.
+func setupSmartCtlInfoMocks(t *testing.T, deviceName string, deviceType string, fixturePath string, shellErr error) (*mock_shell.MockInterface, *mock_config.MockInterface, *logrus.Entry) {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	fakeConfig := mock_config.NewMockInterface(ctrl)
+	fakeConfig.EXPECT().GetCommandMetricsInfoArgs("/dev/" + deviceName).Return("--info --json")
+	fakeConfig.EXPECT().GetString("commands.metrics_smartctl_bin").Return("smartctl")
+	fakeConfig.EXPECT().GetInt("commands.metrics_smartctl_timeout").Return(120)
+
+	smartctlInfoResults, err := os.ReadFile(fixturePath)
+	require.NoError(t, err)
+
+	someLogger := logrus.WithFields(logrus.Fields{})
+	fakeShell := mock_shell.NewMockInterface(ctrl)
+	fakeShell.EXPECT().
+		CommandContext(gomock.Any(), someLogger, "smartctl",
+			[]string{"--info", "--json", "--device", deviceType, "/dev/" + deviceName},
+			"", gomock.Any()).
+		Return(string(smartctlInfoResults), shellErr)
+
+	return fakeShell, fakeConfig, someLogger
+}
+
+// exitErrorWithCode returns a genuine *exec.ExitError carrying the requested exit
+// status. os.ProcessState cannot be constructed directly, so a child process is
+// required; re-executing the test binary keeps this working on every platform the
+// collector builds for, unlike shelling out to `sh -c "exit N"`.
+func exitErrorWithCode(t *testing.T, code int) *exec.ExitError {
+	t.Helper()
+	cmd := exec.Command(os.Args[0], "-test.run=^TestDetectExitCodeHelperProcess$")
+	cmd.Env = append(os.Environ(), fmt.Sprintf("GO_DETECT_HELPER_EXIT_CODE=%d", code))
+
+	var exitErr *exec.ExitError
+	require.ErrorAs(t, cmd.Run(), &exitErr, "helper process should fail with an ExitError")
+	require.Equal(t, code, exitErr.ExitCode())
+	return exitErr
+}
+
+// TestDetectExitCodeHelperProcess is not a real test. It is the child process that
+// exitErrorWithCode re-executes in order to produce a real *exec.ExitError.
+func TestDetectExitCodeHelperProcess(t *testing.T) {
+	code := os.Getenv("GO_DETECT_HELPER_EXIT_CODE")
+	if code == "" {
+		t.Skip("helper process; not meant to be run directly")
+	}
+	parsed, err := strconv.Atoi(code)
+	require.NoError(t, err)
+	os.Exit(parsed)
 }
 
 func TestDetect_TransformDetectedDevices_LabelWithDeviceType(t *testing.T) {

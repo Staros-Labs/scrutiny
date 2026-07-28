@@ -13,6 +13,7 @@ import (
 	"github.com/analogj/scrutiny/webapp/backend/pkg/models/measurements"
 	"github.com/analogj/scrutiny/webapp/backend/pkg/mqtt"
 	"github.com/analogj/scrutiny/webapp/backend/pkg/notify"
+	"github.com/analogj/scrutiny/webapp/backend/pkg/smartctl"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
@@ -120,8 +121,8 @@ func bindAndValidateSmartInfo(c *gin.Context, logger *logrus.Entry, deviceWWN st
 }
 
 func validateSmartExitStatus(c *gin.Context, logger *logrus.Entry, deviceWWN string, exitStatus int) bool {
-	if exitStatus&0x03 != 0 {
-		logger.Warnf("Rejecting SMART data for device %s: smartctl exit_status %d has fatal bits set (mask 0x03)", deviceWWN, exitStatus)
+	if smartctl.IsFatal(exitStatus) {
+		logger.Warnf("Rejecting SMART data for device %s: smartctl exit_status %d has fatal bits set (mask 0x%02x)", deviceWWN, exitStatus, smartctl.FatalMask)
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"success": false,
 			"error":   fmt.Sprintf("smartctl exit_status %d indicates unreliable data (bits 0-1 set)", exitStatus),

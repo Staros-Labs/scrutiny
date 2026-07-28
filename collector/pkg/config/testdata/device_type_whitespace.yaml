@@ -1,0 +1,10 @@
+version: 1
+devices:
+  # Surrounding whitespace must be trimmed: the type is handed verbatim to
+  # smartctl's --device flag.
+  - device: /dev/sda
+    type: ' jmb39x-q,0 '
+  - device: /dev/sdb
+    type:
+      - '  sat,auto '
+      - 'megaraid,14  '

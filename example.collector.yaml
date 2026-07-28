@@ -56,9 +56,19 @@ devices:
 #  - device: /dev/sda
 #    type: 'sat'
 #
-#  # example for using `-d sat,auto`, notice the square brackets (workaround for #418)
+#  # a device type containing a comma is still a single type, so quote it and leave
+#  # it as a plain value. A list is only needed to give one device several types.
 #  - device: /dev/sda
-#    type: ['sat,auto']
+#    type: 'sat,auto'
+#
+#  # example for a QNAP TR-004 (or other JMicron JMB39x enclosure) in Individual
+#  # mode: every bay is addressed through the same device file, with its own type.
+#  - device: /dev/sdb
+#    type:
+#      - 'jmb39x-q,0'
+#      - 'jmb39x-q,1'
+#      - 'jmb39x-q,2'
+#      - 'jmb39x-q,3'
 #
 #  # example to show how to ignore a specific disk/device.
 #  - device: /dev/sda
