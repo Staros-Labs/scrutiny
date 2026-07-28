@@ -1,0 +1,82 @@
+{
+  "json_format_version": [
+    1,
+    0
+  ],
+  "smartctl": {
+    "version": [
+      7,
+      4
+    ],
+    "svn_revision": "5530",
+    "platform_info": "x86_64-linux-6.6.44",
+    "build_info": "(local build)",
+    "argv": [
+      "smartctl",
+      "--info",
+      "--json",
+      "--device",
+      "sat",
+      "/dev/sda"
+    ],
+    "exit_status": 0
+  },
+  "device": {
+    "name": "/dev/sda",
+    "info_name": "/dev/sda [SAT]",
+    "type": "sat",
+    "protocol": "ATA"
+  },
+  "model_family": "Hitachi Deskstar 7K3000",
+  "model_name": "Hitachi HDS723030ALA640",
+  "serial_number": "MK0000000000000",
+  "wwn": {
+    "naa": 5,
+    "oui": 3274,
+    "id": 6606201857
+  },
+  "firmware_version": "MKAOA3B0",
+  "user_capacity": {
+    "blocks": 5860533168,
+    "bytes": 3000592982016
+  },
+  "logical_block_size": 512,
+  "physical_block_size": 512,
+  "rotation_rate": 7200,
+  "form_factor": {
+    "ata_value": 2,
+    "name": "3.5 inches"
+  },
+  "in_smartctl_database": true,
+  "ata_version": {
+    "string": "ATA8-ACS T13/1699-D revision 4",
+    "major_value": 1008,
+    "minor_value": 41
+  },
+  "sata_version": {
+    "string": "SATA 3.0",
+    "value": 63
+  },
+  "interface_speed": {
+    "max": {
+      "sata_value": 14,
+      "string": "6.0 Gb/s",
+      "units_per_second": 60,
+      "bits_per_unit": 100000000
+    },
+    "current": {
+      "sata_value": 3,
+      "string": "6.0 Gb/s",
+      "units_per_second": 60,
+      "bits_per_unit": 100000000
+    }
+  },
+  "smart_support": {
+    "available": true,
+    "enabled": true
+  },
+  "local_time": {
+    "time_t": 1753660800,
+    "asctime": "Sun Jul 27 00:00:00 2025 UTC"
+  }
+}

@@ -194,10 +194,7 @@ func (mc *MetricsCollector) Collect(deviceID string, deviceName string, deviceTy
 
 	fullDeviceName := detect.DeviceFullPath(deviceName)
 	args := strings.Split(mc.config.GetCommandMetricsSmartArgs(fullDeviceName), " ")
-	//only include the device type if its a non-standard one. In some cases ata drives are detected as scsi in docker, and metadata is lost.
-	if len(deviceType) > 0 && deviceType != "scsi" && deviceType != "ata" {
-		args = append(args, "--device", deviceType)
-	}
+	args = detect.AppendDeviceTypeArgs(args, mc.config.GetDeviceOverrides(), fullDeviceName, deviceType)
 	args = append(args, fullDeviceName)
 
 	timeout := time.Duration(mc.config.GetInt("commands.metrics_smartctl_timeout")) * time.Second
@@ -247,9 +244,7 @@ func (mc *MetricsCollector) Collect(deviceID string, deviceName string, deviceTy
 // unmodified if FARM collection fails or the drive does not support FARM.
 func (mc *MetricsCollector) collectAndMergeFarm(smartJson []byte, fullDeviceName string, deviceType string, deviceName string) []byte {
 	farmArgs := strings.Split(mc.config.GetString("commands.metrics_farm_args"), " ")
-	if len(deviceType) > 0 && deviceType != "scsi" && deviceType != "ata" {
-		farmArgs = append(farmArgs, "--device", deviceType)
-	}
+	farmArgs = detect.AppendDeviceTypeArgs(farmArgs, mc.config.GetDeviceOverrides(), fullDeviceName, deviceType)
 	farmArgs = append(farmArgs, fullDeviceName)
 
 	farmTimeout := time.Duration(mc.config.GetInt("commands.metrics_smartctl_timeout")) * time.Second

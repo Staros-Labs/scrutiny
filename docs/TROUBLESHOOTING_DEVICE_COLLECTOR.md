@@ -84,6 +84,12 @@ the container.
 In some cases `--scan` does not correctly detect the device type, returning incomplete SMART data.
 Scrutiny will supports overriding the detected device type via the config file.
 
+A type written in `collector.yaml` is passed to smartctl verbatim as `-d <type>` on every call
+the collector makes for that device: identification, SMART collection and the Seagate FARM log.
+This includes `scsi` and `ata`. A type that only came from `smartctl --scan` is treated as a
+guess instead: `scsi` and `ata` are dropped so smartctl can auto-detect, because container scans
+routinely label ATA disks as SCSI and forcing `-d scsi` on them loses the ATA attributes.
+
 [example.collector.yaml](https://github.com/Starosdev/scrutiny/blob/master/example.collector.yaml)
 
 ### RAID Controllers (Megaraid/3ware/HBA/Adaptec/HPE/etc)
@@ -184,6 +190,43 @@ them. See [Exit Codes](#exit-codes) below.
 > serial or WWN. Once the collector can read its identity the disk registers under a new
 > device id, and the old entry remains behind showing no data. Delete the stale entry; its
 > history is empty and cannot be merged usefully.
+
+### Drives Reported As Failed With Zero SMART Values (Hitachi/Toshiba)
+
+Some Hitachi and Toshiba drives, most often behind a USB bridge or a SAS/SATA controller,
+answer an auto-detected smartctl query with no model, no serial, `SMART support is: Unavailable`
+and no attributes. Scrutiny then shows the disk as failed with empty metrics, because that is
+what smartctl reported. The drive itself is usually fine: the wrong device type was used.
+
+Diagnose by comparing the two calls on the host that runs the collector:
+
+```bash
+# auto-detected: reports no model and no SMART support
+smartctl -a --json /dev/sdX | jq '.model_name, .smart_support'
+
+# with an explicit type: returns the real identity and attributes
+smartctl -a --json -d sat /dev/sdX | jq '.model_name, .smart_support'
+```
+
+If the second call works, pin the type in the collector config:
+
+```yaml
+# /opt/scrutiny/config/collector.yaml
+devices:
+  - device: /dev/sdX
+    type: 'sat'
+```
+
+`sat` is the usual answer for these drives. Other values worth trying are `sat,auto`,
+`sat,12`, `scsi`, and `usbjmicron` / `usbsunplus` for specific USB bridges; the full list is in
+`man smartctl` under `-d TYPE`. Whatever you configure is passed through verbatim on every
+smartctl call for that device.
+
+> NOTE: `scsi` and `ata` used to be ignored when configured, because the collector could not
+> tell a configured type from a scanned one. As of the fix for
+> [#664](https://github.com/Starosdev/scrutiny/issues/664) they are honored. If you have either
+> of them in your `collector.yaml` from an older release, where it was a no-op, it now takes
+> effect; remove the entry if you actually want auto-detection.
 
 ### NVMe Drives
 

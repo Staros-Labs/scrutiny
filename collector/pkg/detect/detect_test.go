@@ -461,6 +461,10 @@ func TestDetect_SmartCtlInfo(t *testing.T) {
 		fakeConfig.EXPECT().
 			GetInt("commands.metrics_smartctl_timeout").
 			Return(120)
+		fakeConfig.EXPECT().
+			GetDeviceOverrides().
+			Return(nil).
+			AnyTimes()
 
 		someLogger := logrus.WithFields(logrus.Fields{})
 
@@ -544,6 +548,7 @@ func TestDetect_SmartCtlInfo(t *testing.T) {
 		fakeConfig.EXPECT().GetCommandMetricsInfoArgs("/dev/sda").Return("--info --json")
 		fakeConfig.EXPECT().GetString("commands.metrics_smartctl_bin").Return("smartctl")
 		fakeConfig.EXPECT().GetInt("commands.metrics_smartctl_timeout").Return(120)
+		fakeConfig.EXPECT().GetDeviceOverrides().Return(nil).AnyTimes()
 
 		someLogger := logrus.WithFields(logrus.Fields{})
 		fakeShell := mock_shell.NewMockInterface(ctrl)
@@ -567,6 +572,7 @@ func TestDetect_SmartCtlInfo(t *testing.T) {
 		fakeConfig.EXPECT().GetCommandMetricsInfoArgs("/dev/sda").Return("--info --json")
 		fakeConfig.EXPECT().GetString("commands.metrics_smartctl_bin").Return("smartctl")
 		fakeConfig.EXPECT().GetInt("commands.metrics_smartctl_timeout").Return(120)
+		fakeConfig.EXPECT().GetDeviceOverrides().Return(nil).AnyTimes()
 
 		smartctlInfoResults, err := os.ReadFile("testdata/smartctl_info_jmb39x_exit4.json")
 		require.NoError(t, err)
@@ -584,6 +590,153 @@ func TestDetect_SmartCtlInfo(t *testing.T) {
 
 		require.NoError(t, d.SmartCtlInfo(someDevice))
 	})
+
+	// fixes #664: some Hitachi and Toshiba drives report a false failure and zero
+	// SMART values under auto-detection, and only return usable data with an explicit
+	// type. The configured type must therefore reach smartctl on the detection call.
+	t.Run("should pass an explicitly configured device type", func(t *testing.T) {
+		fakeShell, fakeConfig, someLogger := setupSmartCtlInfoArgvMocks(t, "sda",
+			[]string{"--info", "--json", "--device", "sat", "/dev/sda"},
+			"testdata/smartctl_info_hitachi_sat.json", nil,
+			[]models.ScanOverride{{Device: "/dev/sda", DeviceType: []string{"sat"}}})
+
+		d := detect.Detect{Logger: someLogger, Shell: fakeShell, Config: fakeConfig}
+		someDevice := &models.Device{DeviceName: "sda", DeviceType: "sat"}
+
+		require.NoError(t, d.SmartCtlInfo(someDevice))
+
+		// the zero-metric symptom: without the explicit type this drive answers with no
+		// model, no serial, no WWN and smart_support.available false.
+		assert.Equal(t, "Hitachi HDS723030ALA640", someDevice.ModelName)
+		assert.Equal(t, "MK0000000000000", someDevice.SerialNumber)
+		assert.Equal(t, int64(3000592982016), someDevice.Capacity)
+		assert.Equal(t, 7200, someDevice.RotationSpeed)
+		require.NotEmpty(t, someDevice.WWN)
+		require.True(t, someDevice.SmartSupport.Available)
+		assert.Equal(t, "sat", someDevice.DeviceType)
+	})
+
+	// the failure this fixture captures is what the user sees before configuring an
+	// explicit type: smartctl auto-detects the drive as scsi and reports nothing usable.
+	t.Run("should record the zero-metric response when the type is auto-detected", func(t *testing.T) {
+		fakeShell, fakeConfig, someLogger := setupSmartCtlInfoArgvMocks(t, "sda",
+			[]string{"--info", "--json", "/dev/sda"},
+			"testdata/smartctl_info_hitachi_autodetect.json", exitErrorWithCode(t, 4), nil)
+
+		d := detect.Detect{Logger: someLogger, Shell: fakeShell, Config: fakeConfig}
+		someDevice := &models.Device{DeviceName: "sda", DeviceType: "scsi"}
+
+		require.NoError(t, d.SmartCtlInfo(someDevice))
+
+		assert.Empty(t, someDevice.ModelName)
+		assert.Empty(t, someDevice.SerialNumber)
+		assert.False(t, someDevice.SmartSupport.Available)
+		// WWN is deliberately not asserted: with no wwn block in the response the
+		// platform-specific wwnFallback runs, and on a Linux host it reports whatever
+		// real disk happens to sit at /dev/sda.
+	})
+
+	// fixes #664: "scsi" and "ata" are suppressed only because `smartctl --scan`
+	// mislabels ATA drives as scsi in docker. A type the user wrote down is an
+	// instruction, not a guess, and must be passed even when it is one of those two.
+	t.Run("should pass an explicitly configured standard device type", func(t *testing.T) {
+		fakeShell, fakeConfig, someLogger := setupSmartCtlInfoArgvMocks(t, "sda",
+			[]string{"--info", "--json", "--device", "scsi", "/dev/sda"},
+			"testdata/smartctl_info_hitachi_sat.json", nil,
+			[]models.ScanOverride{{Device: "/dev/sda", DeviceType: []string{"scsi"}}})
+
+		d := detect.Detect{Logger: someLogger, Shell: fakeShell, Config: fakeConfig}
+		someDevice := &models.Device{DeviceName: "sda", DeviceType: "scsi"}
+
+		require.NoError(t, d.SmartCtlInfo(someDevice))
+	})
+
+	// a configured device with no type of its own inherits the scanned type, which is
+	// still a guess, so the suppression has to survive the override lookup.
+	t.Run("should suppress a scanned standard device type for a configured device", func(t *testing.T) {
+		fakeShell, fakeConfig, someLogger := setupSmartCtlInfoArgvMocks(t, "sda",
+			[]string{"--info", "--json", "/dev/sda"},
+			"testdata/smartctl_info_hitachi_sat.json", nil,
+			[]models.ScanOverride{{Device: "/dev/sda", Label: "some label"}})
+
+		d := detect.Detect{Logger: someLogger, Shell: fakeShell, Config: fakeConfig}
+		someDevice := &models.Device{DeviceName: "sda", DeviceType: "scsi"}
+
+		require.NoError(t, d.SmartCtlInfo(someDevice))
+	})
+
+	// the old guard compared the raw string, so an uppercase scanned type slipped
+	// through as `--device SCSI` while its lowercase twin was suppressed.
+	t.Run("should suppress an uppercase scanned standard device type", func(t *testing.T) {
+		fakeShell, fakeConfig, someLogger := setupSmartCtlInfoArgvMocks(t, "sda",
+			[]string{"--info", "--json", "/dev/sda"},
+			"testdata/smartctl_info_hitachi_sat.json", nil, nil)
+
+		d := detect.Detect{Logger: someLogger, Shell: fakeShell, Config: fakeConfig}
+		someDevice := &models.Device{DeviceName: "sda", DeviceType: "SCSI"}
+
+		require.NoError(t, d.SmartCtlInfo(someDevice))
+	})
+}
+
+func TestDetect_AppendDeviceTypeArgs(t *testing.T) {
+	someOverrides := []models.ScanOverride{
+		{Device: "/dev/sda", DeviceType: []string{"sat"}},
+		{Device: "/dev/SDB", DeviceType: []string{"ata"}},
+		{Device: "/dev/sdc", DeviceType: []string{"jmb39x-q,0", "jmb39x-q,1"}},
+	}
+
+	testCases := []struct {
+		name           string
+		fullDeviceName string
+		deviceType     string
+		expected       []string
+	}{
+		{"no type", "/dev/sdz", "", []string{"--info"}},
+		{"whitespace only type", "/dev/sdz", "   ", []string{"--info"}},
+		{"scanned scsi is suppressed", "/dev/sdz", "scsi", []string{"--info"}},
+		{"scanned ata is suppressed", "/dev/sdz", "ata", []string{"--info"}},
+		{"scanned nvme is passed", "/dev/sdz", "nvme", []string{"--info", "--device", "nvme"}},
+		{"scanned controller type is passed", "/dev/sdz", "megaraid,4", []string{"--info", "--device", "megaraid,4"}},
+		{"configured sat is passed", "/dev/sda", "sat", []string{"--info", "--device", "sat"}},
+		{"configured ata is passed with a case-insensitive path match", "/dev/sdb", "ata", []string{"--info", "--device", "ata"}},
+		{"configured type list member is passed", "/dev/sdc", "jmb39x-q,1", []string{"--info", "--device", "jmb39x-q,1"}},
+		{"type configured for another device is not honored", "/dev/sdz", "sat", []string{"--info", "--device", "sat"}},
+		{"standard type configured for another device is suppressed", "/dev/sdz", "ata", []string{"--info"}},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			assert.Equal(t, testCase.expected,
+				detect.AppendDeviceTypeArgs([]string{"--info"}, someOverrides, testCase.fullDeviceName, testCase.deviceType))
+		})
+	}
+}
+
+// setupSmartCtlInfoArgvMocks wires a shell that only answers the exact argv given,
+// with the configured device overrides in place. Use it when the assertion is about
+// which arguments reach smartctl; an argv mismatch fails the test through gomock.
+func setupSmartCtlInfoArgvMocks(t *testing.T, deviceName string, expectedArgs []string, fixturePath string, shellErr error, overrides []models.ScanOverride) (*mock_shell.MockInterface, *mock_config.MockInterface, *logrus.Entry) {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	fakeConfig := mock_config.NewMockInterface(ctrl)
+	fakeConfig.EXPECT().GetCommandMetricsInfoArgs("/dev/" + deviceName).Return("--info --json")
+	fakeConfig.EXPECT().GetString("commands.metrics_smartctl_bin").Return("smartctl")
+	fakeConfig.EXPECT().GetInt("commands.metrics_smartctl_timeout").Return(120)
+	fakeConfig.EXPECT().GetDeviceOverrides().Return(overrides).AnyTimes()
+
+	smartctlInfoResults, err := os.ReadFile(fixturePath)
+	require.NoError(t, err)
+
+	someLogger := logrus.WithFields(logrus.Fields{})
+	fakeShell := mock_shell.NewMockInterface(ctrl)
+	fakeShell.EXPECT().
+		CommandContext(gomock.Any(), someLogger, "smartctl", expectedArgs, "", gomock.Any()).
+		Return(string(smartctlInfoResults), shellErr)
+
+	return fakeShell, fakeConfig, someLogger
 }
 
 // setupSmartCtlInfoMocks wires a shell that returns the given fixture and error for
@@ -598,6 +751,7 @@ func setupSmartCtlInfoMocks(t *testing.T, deviceName string, deviceType string, 
 	fakeConfig.EXPECT().GetCommandMetricsInfoArgs("/dev/" + deviceName).Return("--info --json")
 	fakeConfig.EXPECT().GetString("commands.metrics_smartctl_bin").Return("smartctl")
 	fakeConfig.EXPECT().GetInt("commands.metrics_smartctl_timeout").Return(120)
+	fakeConfig.EXPECT().GetDeviceOverrides().Return(nil).AnyTimes()
 
 	smartctlInfoResults, err := os.ReadFile(fixturePath)
 	require.NoError(t, err)

@@ -78,6 +78,64 @@ func normalizeDeviceName(deviceName string) string {
 	return strings.TrimSpace(stripDevicePrefix(deviceName))
 }
 
+// isAutoDetectedDeviceType reports whether a device type is one that smartctl
+// determines on its own just as well as we can. "ata" and "scsi" are the two
+// values `smartctl --scan` hands back for ordinary disks, and in docker an ATA
+// drive is frequently reported as scsi; forcing "--device scsi" on it loses
+// metadata. "nvme" is not in this set because it has always been passed through.
+func isAutoDetectedDeviceType(deviceType string) bool {
+	switch strings.ToLower(strings.TrimSpace(deviceType)) {
+	case "ata", "scsi":
+		return true
+	default:
+		return false
+	}
+}
+
+// IsConfiguredDeviceType reports whether deviceType was written by the user in the
+// 'devices' section of collector.yaml for fullDeviceName, rather than derived from
+// `smartctl --scan`. The device path is matched case-insensitively, matching
+// config.GetCommandMetricsInfoArgs; the type is matched trimmed and
+// case-insensitively, because the configured value is what ends up in
+// models.Device.DeviceType verbatim.
+func IsConfiguredDeviceType(overrides []models.ScanOverride, fullDeviceName string, deviceType string) bool {
+	wanted := strings.ToLower(strings.TrimSpace(deviceType))
+	if wanted == "" {
+		return false
+	}
+	for _, override := range overrides {
+		if !strings.EqualFold(strings.TrimSpace(override.Device), strings.TrimSpace(fullDeviceName)) {
+			continue
+		}
+		for _, configuredType := range override.DeviceType {
+			if strings.ToLower(strings.TrimSpace(configuredType)) == wanted {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// AppendDeviceTypeArgs appends "--device <type>" to args when the type has to reach
+// smartctl. A type written in collector.yaml is always passed verbatim, including
+// "ata" and "scsi", because an explicit type is the documented remedy for drives
+// (some Hitachi and Toshiba models) that report a false failure and zero SMART
+// values under auto-detection. A type that only came from `smartctl --scan` keeps
+// the historical behavior and is suppressed when it is "ata" or "scsi".
+//
+// This is the single place where the device type is turned into smartctl arguments;
+// the detection, SMART collection and FARM calls all route through it so they cannot
+// drift apart. Fixes #664.
+func AppendDeviceTypeArgs(args []string, overrides []models.ScanOverride, fullDeviceName string, deviceType string) []string {
+	if strings.TrimSpace(deviceType) == "" {
+		return args
+	}
+	if !IsConfiguredDeviceType(overrides, fullDeviceName, deviceType) && isAutoDetectedDeviceType(deviceType) {
+		return args
+	}
+	return append(args, "--device", deviceType)
+}
+
 //private/common functions
 
 // This function calls smartctl --scan which can be used to detect storage devices.
@@ -120,10 +178,7 @@ func (d *Detect) SmartCtlInfo(device *models.Device) error {
 	}
 	fullDeviceName := DeviceFullPath(device.DeviceName)
 	args := strings.Split(d.Config.GetCommandMetricsInfoArgs(fullDeviceName), " ")
-	//only include the device type if its a non-standard one. In some cases ata drives are detected as scsi in docker, and metadata is lost.
-	if len(device.DeviceType) > 0 && device.DeviceType != "scsi" && device.DeviceType != "ata" {
-		args = append(args, "--device", device.DeviceType)
-	}
+	args = AppendDeviceTypeArgs(args, d.Config.GetDeviceOverrides(), fullDeviceName, device.DeviceType)
 	args = append(args, fullDeviceName)
 
 	timeout := time.Duration(d.Config.GetInt("commands.metrics_smartctl_timeout")) * time.Second

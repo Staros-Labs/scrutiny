@@ -68,6 +68,76 @@ func TestMetricsCollector_Collect_PassesCommaDeviceTypeToFarmCall(t *testing.T) 
 	mc.Collect("some-device-id", "sda", "jmb39x-q,0")
 }
 
+// fixes #664: an explicit type is the documented remedy for Hitachi and Toshiba
+// drives that report a false failure and zero SMART values under auto-detection, so
+// it has to reach the SMART and FARM calls, not only the detection call.
+func TestMetricsCollector_Collect_PassesConfiguredDeviceType(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	fakeShell := mock_shell.NewMockInterface(ctrl)
+	fakeShell.EXPECT().
+		CommandContext(gomock.Any(), gomock.Any(), "smartctl",
+			[]string{"--xall", "--json", "--device", "sat", "/dev/sda"},
+			"", gomock.Any()).
+		Return(someSmartPayload, nil)
+	fakeShell.EXPECT().
+		CommandContext(gomock.Any(), gomock.Any(), "smartctl",
+			[]string{"-l", "farm", "--json", "--device", "sat", "/dev/sda"},
+			"", gomock.Any()).
+		Return(`{"seagate_farm_log":{}}`, nil)
+
+	mc := newTestCollectCollector(t, fakeShell, nil)
+	mc.config.Set("commands.metrics_farm_enabled", true)
+	setDeviceOverrides(mc, map[string]interface{}{"device": "/dev/sda", "type": "sat"})
+
+	mc.Collect("some-device-id", "sda", "sat")
+}
+
+// fixes #664: "scsi" and "ata" are suppressed only because `smartctl --scan`
+// mislabels ATA drives as scsi in docker. A configured type is an instruction and is
+// passed even when it is one of those two.
+func TestMetricsCollector_Collect_PassesConfiguredStandardDeviceType(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	fakeShell := mock_shell.NewMockInterface(ctrl)
+	fakeShell.EXPECT().
+		CommandContext(gomock.Any(), gomock.Any(), "smartctl",
+			[]string{"--xall", "--json", "--device", "scsi", "/dev/sda"},
+			"", gomock.Any()).
+		Return(someSmartPayload, nil)
+
+	mc := newTestCollectCollector(t, fakeShell, nil)
+	setDeviceOverrides(mc, map[string]interface{}{"device": "/dev/sda", "type": "scsi"})
+
+	mc.Collect("some-device-id", "sda", "scsi")
+}
+
+// A scanned "scsi" with nothing configured keeps today's behavior: no --device, so a
+// drive that docker mislabels as scsi still reports its ATA metadata.
+func TestMetricsCollector_Collect_SuppressesScannedStandardDeviceType(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	fakeShell := mock_shell.NewMockInterface(ctrl)
+	fakeShell.EXPECT().
+		CommandContext(gomock.Any(), gomock.Any(), "smartctl",
+			[]string{"--xall", "--json", "/dev/sda"},
+			"", gomock.Any()).
+		Return(someSmartPayload, nil)
+	fakeShell.EXPECT().
+		CommandContext(gomock.Any(), gomock.Any(), "smartctl",
+			[]string{"-l", "farm", "--json", "/dev/sda"},
+			"", gomock.Any()).
+		Return(`{"seagate_farm_log":{}}`, nil)
+
+	mc := newTestCollectCollector(t, fakeShell, nil)
+	mc.config.Set("commands.metrics_farm_enabled", true)
+
+	mc.Collect("some-device-id", "sda", "scsi")
+}
+
 // Only exit-status bits 0-1 invalidate the payload. Bit 2 accompanies the QNAP
 // TR-004 "Read Device Statistics page 0x00 failed" warning and must still publish.
 func TestMetricsCollector_Collect_PublishesOnNonFatalExitStatus(t *testing.T) {
@@ -148,6 +218,13 @@ func newTestCollectCollector(t *testing.T, fakeShell *mock_shell.MockInterface, 
 			httpClient: client,
 		},
 	}
+}
+
+// setDeviceOverrides writes a 'devices' section into the collector's config, the way
+// a user would in collector.yaml. GetDeviceOverrides memoizes its result, so this has
+// to run before the first call that reads it.
+func setDeviceOverrides(mc MetricsCollector, overrides ...map[string]interface{}) {
+	mc.config.Set("devices", overrides)
 }
 
 // collectExitErrorWithCode returns a genuine *exec.ExitError carrying the requested

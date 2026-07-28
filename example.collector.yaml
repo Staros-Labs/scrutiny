@@ -51,8 +51,15 @@ host:
 # Scrutiny via `smartctl --scan`
 # See the "--device=TYPE" section of https://linux.die.net/man/8/smartctl
 # type can be a 'string' or a 'list'
+#
+# A type set here is passed to smartctl verbatim as '-d <type>' on every call made for
+# that device, including the standard 'scsi' and 'ata' types. A type that only came from
+# `smartctl --scan` is treated as a guess: 'scsi' and 'ata' are dropped so smartctl can
+# auto-detect, because container scans routinely label ATA disks as SCSI.
 devices:
-#  # example for forcing device type detection for a single disk
+#  # example for forcing device type detection for a single disk. Some Hitachi and
+#  # Toshiba drives report a false failure and zero SMART values under auto-detection
+#  # and need this; see docs/TROUBLESHOOTING_DEVICE_COLLECTOR.md
 #  - device: /dev/sda
 #    type: 'sat'
 #
