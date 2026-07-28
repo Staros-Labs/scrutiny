@@ -13,13 +13,14 @@ import { MatIcon } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { MatIconButton } from '@angular/material/button';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
+import { MenuTriggerRestoreFocusDirective } from 'app/shared/menu-trigger-restore-focus.directive';
 import { FileSizePipe } from '../../../shared/file-size.pipe';
 
 @Component({
     selector: 'app-zfs-pool-card',
     templateUrl: './zfs-pool-card.component.html',
     styleUrls: ['./zfs-pool-card.component.scss'],
-    imports: [NgClass, MatIcon, RouterLink, MatIconButton, MatMenuTrigger, MatMenu, MatMenuItem, DatePipe, FileSizePipe],
+    imports: [NgClass, MatIcon, RouterLink, MatIconButton, MatMenuTrigger, MenuTriggerRestoreFocusDirective, MatMenu, MatMenuItem, DatePipe, FileSizePipe],
 })
 export class ZFSPoolCardComponent {
     private readonly _zfsPoolsService = inject(ZFSPoolsService);

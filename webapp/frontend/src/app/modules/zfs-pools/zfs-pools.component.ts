@@ -9,6 +9,7 @@ import { ZFSPoolModel } from 'app/core/models/zfs-pool-model';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
+import { MenuTriggerRestoreFocusDirective } from 'app/shared/menu-trigger-restore-focus.directive';
 import { ZFSPoolCardComponent } from '../../layout/common/zfs-pool-card/zfs-pool-card.component';
 import { KeyValuePipe } from '@angular/common';
 
@@ -18,7 +19,7 @@ import { KeyValuePipe } from '@angular/common';
     styleUrls: ['./zfs-pools.component.scss'],
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatButton, MatIcon, MatIconButton, MatMenuTrigger, MatMenu, MatMenuItem, ZFSPoolCardComponent, KeyValuePipe],
+    imports: [MatButton, MatIcon, MatIconButton, MatMenuTrigger, MenuTriggerRestoreFocusDirective, MatMenu, MatMenuItem, ZFSPoolCardComponent, KeyValuePipe],
 })
 export class ZFSPoolsComponent implements OnInit, OnDestroy {
     private readonly _zfsPoolsService = inject(ZFSPoolsService);
