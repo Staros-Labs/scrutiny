@@ -11,8 +11,8 @@ import (
 )
 
 type hostActionRequest struct {
-	HostIDs      []string `json:"host_ids"`
 	Confirmation string   `json:"confirmation,omitempty"`
+	HostIDs      []string `json:"host_ids"`
 }
 
 func GetHosts(c *gin.Context) {

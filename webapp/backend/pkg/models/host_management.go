@@ -9,7 +9,7 @@ type HostSummary struct {
 
 type HostActionResult struct {
 	HostID      string `json:"host_id"`
-	Success     bool   `json:"success"`
-	DeviceCount int64  `json:"device_count"`
 	Error       string `json:"error,omitempty"`
+	DeviceCount int64  `json:"device_count"`
+	Success     bool   `json:"success"`
 }
