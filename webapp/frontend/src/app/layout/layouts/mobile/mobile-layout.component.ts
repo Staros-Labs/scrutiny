@@ -9,13 +9,14 @@ import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { MobileTabBarComponent } from '../../common/mobile-tab-bar/mobile-tab-bar.component';
+import { CdkScrollable } from '@angular/cdk/scrolling';
 
 @Component({
     selector: 'mobile-layout',
     templateUrl: './mobile-layout.component.html',
     styleUrls: ['./mobile-layout.component.scss'],
     encapsulation: ViewEncapsulation.None,
-    imports: [RouterLink, ThemeToggleComponent, MatIconButton, MatTooltip, MatIcon, RouterOutlet, MobileTabBarComponent],
+    imports: [RouterLink, ThemeToggleComponent, MatIconButton, MatTooltip, MatIcon, RouterOutlet, MobileTabBarComponent, CdkScrollable],
 })
 export class MobileLayoutComponent implements OnInit, OnDestroy {
     private readonly _authService = inject(AuthService);

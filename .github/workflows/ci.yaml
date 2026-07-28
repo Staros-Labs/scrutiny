@@ -13,6 +13,19 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '24'
+      - name: Guard menu triggers
+        # Every component that renders a mat-menu trigger must import
+        # MenuTriggerRestoreFocusDirective, otherwise it silently keeps the scroll jump of #672.
+        run: |
+          missing=$(comm -23 \
+            <(grep -rl 'matMenuTriggerFor' webapp/frontend/src/app --include='*.component.html' | sed 's/\.html$/.ts/' | sort) \
+            <(grep -rl 'MenuTriggerRestoreFocusDirective' webapp/frontend/src/app --include='*.ts' | sort))
+          if [ -n "$missing" ]; then
+            echo "These components render a mat-menu trigger without importing MenuTriggerRestoreFocusDirective:"
+            echo "$missing"
+            echo "Add it to the component's imports array, see webapp/frontend/src/app/shared/menu-trigger-restore-focus.directive.ts"
+            exit 1
+          fi
       - name: Test Frontend
         run: |
           make binary-frontend-test-coverage

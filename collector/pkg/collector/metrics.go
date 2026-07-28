@@ -16,6 +16,7 @@ import (
 	"github.com/analogj/scrutiny/collector/pkg/detect"
 	collectorerrors "github.com/analogj/scrutiny/collector/pkg/errors"
 	"github.com/analogj/scrutiny/collector/pkg/models"
+	"github.com/analogj/scrutiny/webapp/backend/pkg/smartctl"
 	"github.com/sirupsen/logrus"
 )
 
@@ -193,10 +194,7 @@ func (mc *MetricsCollector) Collect(deviceID string, deviceName string, deviceTy
 
 	fullDeviceName := detect.DeviceFullPath(deviceName)
 	args := strings.Split(mc.config.GetCommandMetricsSmartArgs(fullDeviceName), " ")
-	//only include the device type if its a non-standard one. In some cases ata drives are detected as scsi in docker, and metadata is lost.
-	if len(deviceType) > 0 && deviceType != "scsi" && deviceType != "ata" {
-		args = append(args, "--device", deviceType)
-	}
+	args = detect.AppendDeviceTypeArgs(args, mc.config.GetDeviceOverrides(), fullDeviceName, deviceType)
 	args = append(args, fullDeviceName)
 
 	timeout := time.Duration(mc.config.GetInt("commands.metrics_smartctl_timeout")) * time.Second
@@ -207,21 +205,14 @@ func (mc *MetricsCollector) Collect(deviceID string, deviceName string, deviceTy
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			exitCode := exitError.ExitCode()
-			// Bits 0x01 and 0x02 indicate fatal errors where the JSON
-			// output should not be trusted:
-			//   0x01 = command line parse error
-			//   0x02 = device open failed (includes standby)
-			// Other bits are informational and the JSON data is still valid:
-			//   0x04 = checksum error in response (common behind RAID/HBA)
-			//   0x08 = SMART status failure
-			//   0x10 = prefail attributes past threshold
-			//   0x20 = some attributes past threshold
-			//   0x40 = error log contains records of errors
-			//   0x80 = self-test log contains errors
-			if exitCode&0x03 != 0 {
+			// Only a command line parse error or a device open failure mean the
+			// JSON output cannot be trusted. Every other bit describes a condition
+			// of the disk, and the payload is still complete. See
+			// webapp/backend/pkg/smartctl for the bit definitions.
+			if smartctl.IsFatal(exitCode) {
 				mc.logger.Errorf("smartctl returned a fatal error code (%d) while processing %s", exitCode, deviceName)
 				mc.LogSmartctlExitCode(exitCode, deviceName)
-				if exitCode&0x02 != 0 {
+				if exitCode&smartctl.ExitDeviceOpenFailed != 0 {
 					mc.hintAppArmorOnDeviceOpenFailure(deviceName)
 				}
 				mc.ReportDeviceError(deviceID, "xall", fmt.Sprintf("smartctl exited with fatal code %d while reading %s", exitCode, deviceName))
@@ -253,9 +244,7 @@ func (mc *MetricsCollector) Collect(deviceID string, deviceName string, deviceTy
 // unmodified if FARM collection fails or the drive does not support FARM.
 func (mc *MetricsCollector) collectAndMergeFarm(smartJson []byte, fullDeviceName string, deviceType string, deviceName string) []byte {
 	farmArgs := strings.Split(mc.config.GetString("commands.metrics_farm_args"), " ")
-	if len(deviceType) > 0 && deviceType != "scsi" && deviceType != "ata" {
-		farmArgs = append(farmArgs, "--device", deviceType)
-	}
+	farmArgs = detect.AppendDeviceTypeArgs(farmArgs, mc.config.GetDeviceOverrides(), fullDeviceName, deviceType)
 	farmArgs = append(farmArgs, fullDeviceName)
 
 	farmTimeout := time.Duration(mc.config.GetInt("commands.metrics_smartctl_timeout")) * time.Second

@@ -1,7 +1,8 @@
 version: 1
 devices:
-  # the scrutiny config parser will detect `sat,auto` as two separate items in a list. If you want to use `-d sat,auto` you must
-  # set 'sat,auto' in a list (see eg. /dev/sbd)
+  # A comma belongs to the smartctl device type itself (`-d sat,auto`), it does not
+  # separate two types. Both the scalar form (/dev/sda) and the list form (/dev/sdb)
+  # must preserve it as a single value.
   - device: /dev/sda
     type: 'sat,auto'
   - device: /dev/sdb
