@@ -14,6 +14,7 @@ import (
 	"github.com/analogj/scrutiny/collector/pkg/config"
 	"github.com/analogj/scrutiny/collector/pkg/models"
 	"github.com/analogj/scrutiny/webapp/backend/pkg/models/collector"
+	"github.com/analogj/scrutiny/webapp/backend/pkg/smartctl"
 	"github.com/analogj/scrutiny/webapp/backend/pkg/version"
 	"github.com/sirupsen/logrus"
 )
@@ -129,25 +130,33 @@ func (d *Detect) SmartCtlInfo(device *models.Device) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	availableDeviceInfoJson, err := d.Shell.CommandContext(ctx, d.Logger, d.Config.GetString("commands.metrics_smartctl_bin"), args, "", os.Environ())
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
-		exitCode := exitErr.ExitCode()
-		if exitCode&0xBF == 0 {
-			d.Logger.Warnf("Successfully retrieved device information for %s, but received exit code %d, which is a non-fatal exit code. Continuing.", device.DeviceName, exitCode)
-		} else {
+	if err != nil {
+		var exitErr *exec.ExitError
+		if !errors.As(err, &exitErr) {
+			// not a smartctl exit status at all (binary missing, context deadline, ...), so there is no output to salvage.
 			d.Logger.Errorf("Could not retrieve device information for %s: %v", device.DeviceName, err)
 			return err
 		}
+		exitCode := exitErr.ExitCode()
+		if smartctl.IsFatal(exitCode) {
+			d.Logger.Errorf("Could not retrieve device information for %s: smartctl exited with fatal code %d: %v", device.DeviceName, exitCode, err)
+			return err
+		}
+		// Every non-fatal bit describes a condition of the disk rather than of the
+		// output, and smartctl still prints a complete JSON document alongside it.
+		// QNAP TR-004 enclosures behind the jmb39x-q backend report
+		// "Read Device Statistics page 0x00 failed" and exit 4 on every run.
+		d.Logger.Warnf("smartctl returned non-fatal exit code %d while reading device information for %s; using the returned JSON", exitCode, device.DeviceName)
 	}
 
-	if err != nil {
-		d.Logger.Errorf("Could not retrieve device information for %s: %v", device.DeviceName, err)
-		return err
+	if strings.TrimSpace(availableDeviceInfoJson) == "" {
+		d.Logger.Errorf("Could not retrieve device information for %s: smartctl returned no output", device.DeviceName)
+		return fmt.Errorf("smartctl returned no output for device %s", device.DeviceName)
 	}
 
 	var availableDeviceInfo collector.SmartInfo
-	err = json.Unmarshal([]byte(availableDeviceInfoJson), &availableDeviceInfo)
-	if err != nil {
+	// shadow err deliberately: the outer err may still hold a tolerated *exec.ExitError.
+	if err := json.Unmarshal([]byte(availableDeviceInfoJson), &availableDeviceInfo); err != nil {
 		d.Logger.Errorf("Could not decode device information for %s: %v", device.DeviceName, err)
 		return err
 	}

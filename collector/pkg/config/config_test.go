@@ -43,7 +43,7 @@ func TestConfiguration_GetScanOverrides_Simple(t *testing.T) {
 	require.Equal(t, []models.ScanOverride{{Device: "/dev/sda", DeviceType: []string{"sat"}, Ignore: false}}, scanOverrides)
 }
 
-// fixes #418
+// fixes #418, #663
 func TestConfiguration_GetScanOverrides_DeviceTypeComma(t *testing.T) {
 	t.Parallel()
 
@@ -56,10 +56,72 @@ func TestConfiguration_GetScanOverrides_DeviceTypeComma(t *testing.T) {
 	scanOverrides := testConfig.GetDeviceOverrides()
 
 	//assert
+	// a comma is part of the smartctl device type, so both the scalar and the list
+	// form must yield exactly one type.
 	require.Equal(t, []models.ScanOverride{
-		{Device: "/dev/sda", DeviceType: []string{"sat", "auto"}, Ignore: false},
+		{Device: "/dev/sda", DeviceType: []string{"sat,auto"}, Ignore: false},
 		{Device: "/dev/sdb", DeviceType: []string{"sat,auto"}, Ignore: false},
 	}, scanOverrides)
+}
+
+// fixes #663: QNAP TR-004 enclosures address each bay as `jmb39x-q,N`.
+func TestConfiguration_GetScanOverrides_DeviceTypeJmb39x(t *testing.T) {
+	t.Parallel()
+
+	//setup
+	testConfig, _ := config.Create()
+
+	//test
+	err := testConfig.ReadConfig(path.Join("testdata", "device_type_jmb39x.yaml"), testLogger())
+	require.NoError(t, err, "should correctly load jmb39x device config")
+	scanOverrides := testConfig.GetDeviceOverrides()
+
+	//assert
+	require.Equal(t, []models.ScanOverride{
+		{Device: "/dev/sda", DeviceType: []string{"jmb39x-q,0"}, Ignore: false},
+		{
+			Device:     "/dev/sdb",
+			DeviceType: []string{"jmb39x-q,0", "jmb39x-q,1", "jmb39x-q,2", "jmb39x-q,3"},
+			Ignore:     false,
+		},
+	}, scanOverrides)
+}
+
+func TestConfiguration_GetScanOverrides_DeviceTypeWhitespace(t *testing.T) {
+	t.Parallel()
+
+	//setup
+	testConfig, _ := config.Create()
+
+	//test
+	err := testConfig.ReadConfig(path.Join("testdata", "device_type_whitespace.yaml"), testLogger())
+	require.NoError(t, err, "should correctly load whitespace device config")
+	scanOverrides := testConfig.GetDeviceOverrides()
+
+	//assert
+	require.Equal(t, []models.ScanOverride{
+		{Device: "/dev/sda", DeviceType: []string{"jmb39x-q,0"}, Ignore: false},
+		{Device: "/dev/sdb", DeviceType: []string{"sat,auto", "megaraid,14"}, Ignore: false},
+	}, scanOverrides)
+}
+
+func TestConfiguration_GetScanOverrides_DeviceTypeEmpty(t *testing.T) {
+	t.Parallel()
+
+	//setup
+	testConfig, _ := config.Create()
+
+	//test
+	err := testConfig.ReadConfig(path.Join("testdata", "device_type_empty.yaml"), testLogger())
+	require.NoError(t, err, "should correctly load empty device type config")
+	scanOverrides := testConfig.GetDeviceOverrides()
+
+	//assert
+	// an explicit empty type must stay non-nil, otherwise buildOverrideDeviceGroup
+	// would fall back to the scanned type instead of dropping the device.
+	require.Len(t, scanOverrides, 1)
+	require.NotNil(t, scanOverrides[0].DeviceType)
+	require.Empty(t, scanOverrides[0].DeviceType)
 }
 
 func TestConfiguration_GetScanOverrides_Ignore(t *testing.T) {

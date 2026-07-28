@@ -135,6 +135,56 @@ devices:
 
 >
 
+### USB/SATA Enclosures (JMicron JMB39x - QNAP TR-004/TR-002)
+
+Multi-bay enclosures built on the JMicron JMB39x bridge present every bay through a single
+device file. smartctl reaches the individual disks with the `jmb39x-q,N` device type, where
+`N` is the zero-based bay index. This requires smartmontools 7.3 or newer on the host that
+runs the collector.
+
+The enclosure must be in **Individual** mode. In the hardware RAID modes the bridge hides the
+member disks and no per-disk SMART data is available at all.
+
+Confirm the backend works before configuring Scrutiny:
+
+```bash
+# which device file the enclosure is behind
+smartctl --scan
+
+# probe each bay; repeat for 1, 2, 3
+smartctl -i -d jmb39x-q,0 /dev/sdb
+```
+
+Then list one type per populated bay:
+
+```yaml
+# /opt/scrutiny/config/collector.yaml
+devices:
+  - device: /dev/sdb
+    type:
+      - 'jmb39x-q,0'
+      - 'jmb39x-q,1'
+      - 'jmb39x-q,2'
+      - 'jmb39x-q,3'
+```
+
+A single bay can also be written as a plain value, `type: 'jmb39x-q,0'`. The comma belongs to
+the device type and is not a separator.
+
+> NOTE: as with RAID controllers, if you use docker you **must** pass the device file through
+> to the container with `--device=/dev/sdb`, and add `--cap-add SYS_RAWIO`.
+
+On many of these enclosures smartctl prints `Read Device Statistics page 0x00 failed` and
+exits with code 4 on every run. That is a warning about one optional log page, not a failure:
+the identity and SMART attributes in the same response are complete, and the collector uses
+them. See [Exit Codes](#exit-codes) below.
+
+> If you monitored one of these disks on a Scrutiny release older than the fix for
+> [#663](https://github.com/Starosdev/scrutiny/issues/663), it was registered without a model,
+> serial or WWN. Once the collector can read its identity the disk registers under a new
+> device id, and the old entry remains behind showing no data. Delete the stale entry; its
+> history is empty and cannot be merged usefully.
+
 ### NVMe Drives
 
 As mentioned in the [README.md](../README.md), NVMe devices require both `--cap-add SYS_RAWIO` and `--cap-add SYS_ADMIN`
