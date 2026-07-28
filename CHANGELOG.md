@@ -2,6 +2,12 @@
 
 All notable changes to Scrutiny will be documented in this file.
 
+## [1.67.1](https://github.com/Starosdev/scrutiny/compare/v1.67.0...v1.67.1) (2026-07-28)
+
+### Bug Fixes
+
+* manual release trigger ([724b0e1](https://github.com/Starosdev/scrutiny/commit/724b0e14dad19d43910ed235ba07a29cd9663487))
+
 ## [1.67.0](https://github.com/Starosdev/scrutiny/compare/v1.66.0...v1.67.0) (2026-07-17)
 
 ### Features
