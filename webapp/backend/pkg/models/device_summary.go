@@ -35,6 +35,15 @@ type DeviceSummaryPage struct {
 	Pagination PaginationMetadata
 }
 
+type TemperatureDeviceOption struct {
+	DeviceID     string `json:"device_id"`
+	HostID       string `json:"host_id"`
+	Label        string `json:"label"`
+	DeviceName   string `json:"device_name"`
+	ModelName    string `json:"model_name"`
+	SerialNumber string `json:"serial_number"`
+}
+
 type DeviceSummary struct {
 	SmartResults *SmartSummary                   `json:"smart,omitempty"`
 	TempHistory  []measurements.SmartTemperature `json:"temp_history,omitempty"`

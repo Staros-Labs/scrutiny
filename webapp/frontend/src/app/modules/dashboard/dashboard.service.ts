@@ -1,14 +1,15 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { getBasePath } from 'app/app.routing';
 import { DeviceSummaryPage, DeviceSummaryResponseWrapper } from 'app/core/models/device-summary-response-wrapper';
 import { DeviceSummaryModel } from 'app/core/models/device-summary-model';
 import { SmartTemperatureModel } from 'app/core/models/measurements/smart-temperature-model';
-import { DeviceSummaryTempResponseWrapper } from 'app/core/models/device-summary-temp-response-wrapper';
+import { DeviceSummaryTempResponseWrapper, TemperatureDeviceOption, TemperatureDeviceOptionsResponseWrapper } from 'app/core/models/device-summary-temp-response-wrapper';
 import { FilesystemSummaryResponseWrapper, FilesystemCapacityModel, FilesystemHostStatusModel } from 'app/core/models/filesystem-summary-model';
 import { DashboardDisplay, DashboardPageSize, DashboardSort } from 'app/core/config/app.config';
+import { TemperatureSelection } from 'app/modules/dashboard/temperature-selection';
 
 export interface SummaryPageRequest {
     page: number;
@@ -27,6 +28,7 @@ export class DashboardService {
     // Observables
     private readonly _data: BehaviorSubject<{ [p: string]: DeviceSummaryModel }>;
     private readonly _pageData: BehaviorSubject<DeviceSummaryPage | null>;
+    readonly temperatureSelection = new TemperatureSelection();
 
     /**
      * Constructor
@@ -100,17 +102,24 @@ export class DashboardService {
         );
     }
 
-    getSummaryTempData(durationKey: string): Observable<{ [key: string]: SmartTemperatureModel[] }> {
-        const params = {};
+    getSummaryTempData(durationKey: string, deviceIDs?: string[]): Observable<{ [key: string]: SmartTemperatureModel[] }> {
+        let params = new HttpParams();
         if (durationKey) {
-            params['duration_key'] = durationKey;
+            params = params.set('duration_key', durationKey);
+        }
+        for (const deviceID of deviceIDs ?? []) {
+            params = params.append('device_id', deviceID);
         }
 
-        return this._httpClient.get(getBasePath() + '/api/summary/temp', { params: params }).pipe(
+        return this._httpClient.get(getBasePath() + '/api/summary/temp', { params }).pipe(
             map((response: DeviceSummaryTempResponseWrapper) => {
                 return response.data.temp_history;
             })
         );
+    }
+
+    getTemperatureDeviceOptions(): Observable<TemperatureDeviceOption[]> {
+        return this._httpClient.get<TemperatureDeviceOptionsResponseWrapper>(getBasePath() + '/api/summary/temp/devices').pipe(map((response) => response.data.devices));
     }
 
     runCollectors(): Observable<any> {

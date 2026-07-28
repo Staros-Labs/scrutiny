@@ -56,6 +56,7 @@ type Settings struct {
 	FileSizeSIUnits    bool   `json:"file_size_si_units" mapstructure:"file_size_si_units"`
 	Collector          struct {
 		RetrieveSCTHistory bool `json:"retrieve_sct_temperature_history" mapstructure:"retrieve_sct_temperature_history"`
+		StoreTempHistory   bool `json:"store_temperature_history" mapstructure:"store_temperature_history"`
 	} `json:"collector" mapstructure:"collector"` // Missed collector ping notification settings
 	Navigation struct {
 		ShowZFSPools bool `json:"show_zfs_pools" mapstructure:"show_zfs_pools"`

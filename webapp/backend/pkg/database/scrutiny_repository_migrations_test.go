@@ -528,3 +528,14 @@ func TestMigrateAddsDashboardPageSizeSetting(t *testing.T) {
 	require.Equal(t, "numeric", setting.SettingDataType)
 	require.Equal(t, 25, setting.SettingValueNumeric)
 }
+
+func TestMigrateEnablesTemperatureHistoryStorage(t *testing.T) {
+	repo := createMigrationTestRepository(t)
+
+	require.NoError(t, repo.Migrate(context.Background()))
+
+	var setting models.SettingEntry
+	require.NoError(t, repo.gormClient.Where("setting_key_name = ?", "store_temperature_history").First(&setting).Error)
+	require.Equal(t, "bool", setting.SettingDataType)
+	require.True(t, setting.SettingValueBool)
+}
