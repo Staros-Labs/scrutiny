@@ -388,6 +388,8 @@ Date: %s`, currentTime.Format(time.RFC3339)), payload.Message)
 	require.Contains(t, payload.HTMLMessage, "Failure Type")
 	require.Contains(t, payload.HTMLMessage, "EmailTest")
 	require.Contains(t, payload.HTMLMessage, currentTime.Format(time.RFC3339))
+	require.NotContains(t, payload.HTMLMessage, ">Device Name</td>")
+	require.NotContains(t, payload.HTMLMessage, ">Device Label</td>")
 }
 
 func TestNewPayload_WithHostId(t *testing.T) {
@@ -407,7 +409,7 @@ func TestNewPayload_WithHostId(t *testing.T) {
 	payload := NewPayload(device, false, currentTime)
 
 	//assert
-	require.Equal(t, "Scrutiny SMART error (ScrutinyFailure) detected on [host]device: [custom-host]/dev/sda", payload.Subject)
+	require.Equal(t, "Scrutiny SMART error (ScrutinyFailure) detected on device: /dev/sda (host: custom-host)", payload.Subject)
 	require.Equal(t, fmt.Sprintf(`Scrutiny SMART error notification for device: /dev/sda
 Host Id: custom-host
 Failure Type: ScrutinyFailure
@@ -599,7 +601,7 @@ func TestNewMissedPingPayload_WithHostId(t *testing.T) {
 
 	//assert
 	require.Equal(t, "nas-server-01", payload.HostId)
-	require.Equal(t, "Scrutiny collector missed ping on [host]device: [nas-server-01]/dev/sda", payload.Subject)
+	require.Equal(t, "Scrutiny collector missed ping on device: /dev/sda (host: nas-server-01)", payload.Subject)
 	require.Contains(t, payload.Message, "Host Id: nas-server-01")
 }
 
@@ -643,7 +645,7 @@ func TestNewMissedPingPayload_WithHostIdAndLabel(t *testing.T) {
 	payload := NewMissedPingPayload(device, lastSeen, timeoutMinutes)
 
 	//assert
-	require.Equal(t, "Scrutiny collector missed ping on [host]device: [nas-server-01]Parity Drive 1 (/dev/sda)", payload.Subject)
+	require.Equal(t, "Scrutiny collector missed ping on device: Parity Drive 1 (/dev/sda) (host: nas-server-01)", payload.Subject)
 	require.Contains(t, payload.Message, "Host Id: nas-server-01")
 	require.Contains(t, payload.Message, "Device Label: Parity Drive 1")
 }
@@ -682,8 +684,10 @@ func TestNewMissedPing_HTMLMessage(t *testing.T) {
 	notify := NewMissedPing(logrus.StandardLogger(), nil, device, time.Now().Add(-2*time.Hour), 60)
 
 	require.Contains(t, notify.Payload.HTMLMessage, "<!DOCTYPE html>")
-	require.Contains(t, notify.Payload.HTMLMessage, "collector missed ping")
+	require.Contains(t, notify.Payload.HTMLMessage, "COLLECTOR OFFLINE")
 	require.Contains(t, notify.Payload.HTMLMessage, "Parity Drive 1 (/dev/sda)")
+	require.Contains(t, notify.Payload.HTMLMessage, "Last Seen")
+	require.Contains(t, notify.Payload.HTMLMessage, "Timeout Threshold")
 }
 
 func TestNewHeartbeatPayload_HTMLMessage(t *testing.T) {
@@ -732,6 +736,48 @@ func TestNewReplacementRisk_HTMLMessage(t *testing.T) {
 	require.Contains(t, notify.Payload.HTMLMessage, "REPLACEMENT RISK")
 	require.Contains(t, notify.Payload.HTMLMessage, "88/100")
 	require.Contains(t, notify.Payload.HTMLMessage, "replace_soon")
+}
+
+func TestFormatNotificationHTML_UsesResponsiveAlertLayout(t *testing.T) {
+	t.Parallel()
+
+	message := formatNotificationHTML(
+		"<drive alert>",
+		"<subtitle>",
+		"",
+		"",
+		[][2]string{{"Error", "<smartctl failure>"}},
+		"<footer>",
+	)
+
+	require.Contains(t, message, `class="scrutiny-shell"`)
+	require.Contains(t, message, `max-width:640px`)
+	require.Contains(t, message, `@media only screen and (max-width: 640px)`)
+	require.Contains(t, message, "DRIVE ALERT")
+	require.Contains(t, message, "Alert details")
+	require.Contains(t, message, "&lt;drive alert&gt;")
+	require.Contains(t, message, "&lt;smartctl failure&gt;")
+	require.NotContains(t, message, "<smartctl failure>")
+}
+
+func TestFormatHTMLMissedPingDigest_UsesResponsiveAlertLayout(t *testing.T) {
+	t.Parallel()
+
+	message := formatHTMLMissedPingDigest([]MissedPingDigestDevice{
+		{
+			LastSeen:     time.Now().Add(-90 * time.Minute),
+			DeviceName:   "/dev/sda",
+			SerialNumber: "SERIAL-01",
+			HostId:       "nas-01",
+			Label:        "<parity drive>",
+		},
+	}, 1, 60)
+
+	require.Contains(t, message, `class="scrutiny-shell"`)
+	require.Contains(t, message, "CONNECTIVITY ALERT")
+	require.Contains(t, message, "Affected devices")
+	require.Contains(t, message, "&lt;parity drive&gt;")
+	require.NotContains(t, message, "<parity drive>")
 }
 
 func TestNormalizeGotifyURL_Port8080_AddsDisableTLS(t *testing.T) {
