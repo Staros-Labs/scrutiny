@@ -280,12 +280,15 @@ func (p *Payload) GenerateSubject() string {
 	if len(p.DeviceLabel) > 0 {
 		deviceIdentifier = fmt.Sprintf(fmtLabelWithName, p.DeviceLabel, p.DeviceName)
 	}
-	if len(p.HostId) > 0 {
-		subject = fmt.Sprintf("Scrutiny SMART error (%s) detected on [host]device: [%s]%s", p.FailureType, p.HostId, deviceIdentifier)
-	} else {
-		subject = fmt.Sprintf("Scrutiny SMART error (%s) detected on device: %s", p.FailureType, deviceIdentifier)
-	}
+	subject = fmt.Sprintf("Scrutiny SMART error (%s) detected on %s", p.FailureType, formatSubjectDevice(deviceIdentifier, p.HostId))
 	return subject
+}
+
+func formatSubjectDevice(deviceIdentifier, hostID string) string {
+	if hostID == "" {
+		return fmt.Sprintf("device: %s", deviceIdentifier)
+	}
+	return fmt.Sprintf("device: %s (host: %s)", deviceIdentifier, hostID)
 }
 
 func (p *Payload) GenerateMessage() string {
@@ -323,15 +326,11 @@ func (p *Payload) GenerateHTMLMessage() string {
 	rows := [][2]string{
 		{notifyRowFailureType, p.FailureType},
 		{"Device", payloadDeviceIdentifier(p.DeviceName, p.DeviceLabel)},
-		{"Device Name", p.DeviceName},
 		{notifyRowDeviceSerial, p.DeviceSerial},
 		{notifyRowDeviceType, p.DeviceType},
 	}
 	if len(p.HostId) > 0 {
 		rows = append(rows, [2]string{"Host Id", p.HostId})
-	}
-	if len(p.DeviceLabel) > 0 {
-		rows = append(rows, [2]string{"Device Label", p.DeviceLabel})
 	}
 	rows = append(rows, [2]string{"Date", p.Date})
 
@@ -354,8 +353,8 @@ func (p *Payload) GenerateHTMLMessage() string {
 
 func writePayloadHTMLRow(b *strings.Builder, label string, value string) {
 	fmt.Fprintf(b, `<tr>
-<td style="padding:8px 0;border-bottom:1px solid #f1f3f5;color:#6c757d;width:160px;vertical-align:top;">%s</td>
-<td style="padding:8px 0;border-bottom:1px solid #f1f3f5;color:#212529;">%s</td>
+<td class="scrutiny-detail-label" style="padding:12px 10px 12px 0;border-bottom:1px solid #e6eaf0;color:#667085;width:34%%;vertical-align:top;font-size:11px;font-weight:bold;letter-spacing:0.06em;text-transform:uppercase;">%s</td>
+<td style="padding:12px 0;border-bottom:1px solid #e6eaf0;color:#1d2939;vertical-align:top;word-break:break-word;">%s</td>
 </tr>`, html.EscapeString(label), html.EscapeString(value))
 }
 
@@ -369,43 +368,84 @@ func payloadDeviceIdentifier(deviceName, deviceLabel string) string {
 func formatNotificationHTML(subject, subtitle, bannerText, bannerColor string, rows [][2]string, footer string) string {
 	var b strings.Builder
 
-	b.WriteString(`<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background-color:#f4f4f4;font-family:Arial,Helvetica,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4;padding:20px 0;">
-<tr><td align="center">
-<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:4px;overflow:hidden;">
-`)
-
-	if bannerText != "" {
-		fmt.Fprintf(&b, `<tr><td style="background-color:%s;padding:12px 30px;color:#ffffff;font-size:12px;font-weight:bold;letter-spacing:0.04em;">%s</td></tr>`,
-			html.EscapeString(bannerColor), html.EscapeString(bannerText))
+	if bannerText == "" {
+		bannerText = "DRIVE ALERT"
+	}
+	if bannerColor == "" {
+		bannerColor = "#d64545"
 	}
 
-	fmt.Fprintf(&b, `<tr><td style="padding:24px 30px 12px;border-bottom:1px solid #dee2e6;">
-<h1 style="margin:0 0 6px;color:#212529;font-size:22px;">%s</h1>
-<p style="margin:0;color:#6c757d;font-size:13px;">%s</p>
-</td></tr>`, html.EscapeString(subject), html.EscapeString(subtitle))
-
-	b.WriteString(`<tr><td style="padding:20px 30px;">
-<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px;color:#212529;">`)
+	writeNotificationEmailStart(&b)
+	writeNotificationEmailHeader(&b, bannerColor, bannerText, subject, subtitle)
+	b.WriteString(`<tr><td class="scrutiny-pad" style="padding:22px 32px 8px;background-color:#ffffff;">
+<p style="margin:0 0 12px;color:#667085;font-size:11px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;">Alert details</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px;color:#1d2939;">`)
 
 	for _, row := range rows {
 		writePayloadHTMLRow(&b, row[0], row[1])
 	}
 
-	b.WriteString(`</table></td></tr>
-<tr><td style="padding:15px 30px;background-color:#f8f9fa;border-top:1px solid #dee2e6;">
-<p style="margin:0;color:#6c757d;font-size:11px;">`)
-	b.WriteString(html.EscapeString(footer))
-	b.WriteString(`</p>
-</td></tr>
-</table>
-</td></tr></table>
-</body></html>`)
+	b.WriteString(`</table></td></tr>`)
+	writeNotificationEmailFooter(&b, footer)
+	writeNotificationEmailEnd(&b)
 
 	return b.String()
+}
+
+func writeNotificationEmailStart(b *strings.Builder) {
+	b.WriteString(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<style>
+@media only screen and (max-width: 640px) {
+  .scrutiny-shell { width: 100% !important; }
+  .scrutiny-pad { padding-left: 20px !important; padding-right: 20px !important; }
+  .scrutiny-title { font-size: 20px !important; line-height: 1.3 !important; }
+  .scrutiny-detail-label { width: 38% !important; }
+}
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#eef2f6;font-family:Arial,Helvetica,sans-serif;color:#1d2939;">
+<span style="display:none!important;max-height:0;overflow:hidden;opacity:0;color:transparent;">Scrutiny server alert</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef2f6;">
+<tr><td align="center" style="padding:32px 12px;">
+<table role="presentation" class="scrutiny-shell" width="640" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background-color:#ffffff;border:1px solid #dfe5ec;border-radius:10px;overflow:hidden;">
+`)
+}
+
+func writeNotificationEmailHeader(b *strings.Builder, accentColor, bannerText, subject, subtitle string) {
+	fmt.Fprintf(b, `<tr><td style="height:6px;background-color:%s;font-size:0;line-height:0;">&nbsp;</td></tr>
+<tr><td class="scrutiny-pad" style="padding:20px 32px 16px;background-color:#ffffff;border-bottom:1px solid #e6eaf0;">
+<table role="presentation" width="100%%" cellpadding="0" cellspacing="0">
+<tr>
+<td style="vertical-align:top;">
+<p style="margin:0;color:#17324d;font-size:15px;font-weight:bold;letter-spacing:0.12em;">SCRUTINY</p>
+<p style="margin:4px 0 0;color:#98a2b3;font-size:10px;font-weight:bold;letter-spacing:0.12em;">SERVER ALERT</p>
+</td>
+<td align="right" style="vertical-align:top;padding-left:12px;"><span style="display:inline-block;padding:6px 9px;background-color:%s;color:#ffffff;border-radius:999px;font-size:10px;font-weight:bold;letter-spacing:0.08em;">%s</span></td>
+</tr>
+</table>
+</td></tr>
+<tr><td class="scrutiny-pad" style="padding:25px 32px 20px;background-color:#ffffff;">
+<h1 class="scrutiny-title" style="margin:0 0 8px;color:#101828;font-size:23px;line-height:1.25;font-weight:bold;">%s</h1>
+<p style="margin:0;color:#667085;font-size:14px;line-height:1.5;">%s</p>
+</td></tr>
+`, html.EscapeString(accentColor), html.EscapeString(accentColor), html.EscapeString(bannerText), html.EscapeString(subject), html.EscapeString(subtitle))
+}
+
+func writeNotificationEmailFooter(b *strings.Builder, footer string) {
+	fmt.Fprintf(b, `<tr><td class="scrutiny-pad" style="padding:18px 32px;background-color:#f8fafc;border-top:1px solid #e6eaf0;">
+<p style="margin:0;color:#667085;font-size:11px;line-height:1.5;">%s</p>
+</td></tr>`, html.EscapeString(footer))
+}
+
+func writeNotificationEmailEnd(b *strings.Builder) {
+	b.WriteString(`</table>
+</td></tr></table>
+</body></html>`)
 }
 
 func New(logger logrus.FieldLogger, appconfig config.Interface, device models.Device, test bool) Notify {
@@ -858,10 +898,7 @@ func (p *MissedPingPayload) generateSubject() string {
 	if len(p.DeviceLabel) > 0 {
 		deviceIdentifier = fmt.Sprintf(fmtLabelWithName, p.DeviceLabel, p.DeviceName)
 	}
-	if len(p.HostId) > 0 {
-		return fmt.Sprintf("Scrutiny collector missed ping on [host]device: [%s]%s", p.HostId, deviceIdentifier)
-	}
-	return fmt.Sprintf("Scrutiny collector missed ping on device: %s", deviceIdentifier)
+	return fmt.Sprintf("Scrutiny collector missed ping on %s", formatSubjectDevice(deviceIdentifier, p.HostId))
 }
 
 func (p *MissedPingPayload) generateMessage() string {
@@ -908,7 +945,27 @@ func NewMissedPing(logger logrus.FieldLogger, appconfig config.Interface, device
 		Subject:      missedPingPayload.Subject,
 		Message:      missedPingPayload.Message,
 	}
-	payload.HTMLMessage = payload.GenerateHTMLMessage()
+	rows := [][2]string{
+		{notifyRowFailureType, missedPingPayload.FailureType},
+		{"Device", payloadDeviceIdentifier(missedPingPayload.DeviceName, missedPingPayload.DeviceLabel)},
+		{"Device WWN", missedPingPayload.DeviceWWN},
+		{notifyRowDeviceSerial, missedPingPayload.DeviceSerial},
+		{notifyRowDeviceType, device.DeviceType},
+		{"Last Seen", missedPingPayload.LastSeenTime.Format(time.RFC3339)},
+		{"Timeout Threshold", fmt.Sprintf("%d minutes", missedPingPayload.TimeoutMinutes)},
+		{"Date", missedPingPayload.Date},
+	}
+	if missedPingPayload.HostId != "" {
+		rows = append(rows, [2]string{"Host Id", missedPingPayload.HostId})
+	}
+	payload.HTMLMessage = formatNotificationHTML(
+		payload.Subject,
+		"Scrutiny collector missed ping notification",
+		"COLLECTOR OFFLINE",
+		"#c58a16",
+		rows,
+		"Check collector status, network reachability, and server logs.",
+	)
 
 	return Notify{
 		Logger:  logger,
@@ -977,36 +1034,32 @@ func NewMissedPingDigest(logger logrus.FieldLogger, appconfig config.Interface, 
 func formatHTMLMissedPingDigest(devices []MissedPingDigestDevice, count, timeoutMinutes int) string {
 	var b strings.Builder
 
-	b.WriteString(`<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background-color:#f4f4f4;font-family:Arial,Helvetica,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4;padding:20px 0;">
-<tr><td align="center">
-<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:4px;overflow:hidden;">
-`)
-
-	// Warning banner
-	fmt.Fprintf(&b, `<tr><td style="background-color:#e6a817;padding:20px 30px;">
-<h1 style="margin:0;color:#ffffff;font-size:22px;">Missed Collector Pings</h1>
-<p style="margin:4px 0 0;color:#ffffffcc;font-size:13px;">%d device(s) unreachable &middot; %d-minute timeout</p>
-</td></tr>
-`, count, timeoutMinutes)
+	writeNotificationEmailStart(&b)
+	writeNotificationEmailHeader(
+		&b,
+		"#c58a16",
+		"CONNECTIVITY ALERT",
+		"Missed Collector Pings",
+		fmt.Sprintf("%d device(s) unreachable · %d-minute timeout", count, timeoutMinutes),
+	)
 
 	// Summary message
-	fmt.Fprintf(&b, `<tr><td style="padding:20px 30px 10px;">
-<p style="margin:0;color:#495057;font-size:13px;">Scrutiny has not received data from <strong>%d device(s)</strong> within the %d-minute timeout. Please check that the collector(s) are running and can reach the Scrutiny server.</p>
+	fmt.Fprintf(&b, `<tr><td class="scrutiny-pad" style="padding:22px 32px 10px;background-color:#ffffff;">
+<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background-color:#fffaf0;border-left:4px solid #c58a16;border-radius:4px;">
+<tr><td style="padding:14px 16px;color:#694f12;font-size:13px;line-height:1.55;">Scrutiny has not received data from <strong>%d device(s)</strong> within the %d-minute timeout. Check collector status, network reachability, and server logs.</td></tr>
+</table>
 </td></tr>
 `, count, timeoutMinutes)
 
 	// Device table
-	b.WriteString(`<tr><td style="padding:10px 30px 0;">
-<table width="100%" cellpadding="5" cellspacing="0" style="font-size:11px;border-collapse:collapse;">
-<tr style="background-color:#f0f0f0;">
-<th align="left" style="padding:6px;border:1px solid #dee2e6;">Device</th>
-<th align="left" style="padding:6px;border:1px solid #dee2e6;">Serial</th>
-<th align="left" style="padding:6px;border:1px solid #dee2e6;">Host</th>
-<th align="left" style="padding:6px;border:1px solid #dee2e6;">Last Seen</th>
+	b.WriteString(`<tr><td class="scrutiny-pad" style="padding:12px 32px 24px;background-color:#ffffff;">
+<p style="margin:0 0 12px;color:#667085;font-size:11px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;">Affected devices</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="font-size:12px;border-collapse:collapse;">
+<tr style="background-color:#f2f4f7;color:#475467;">
+<th align="left" style="padding:9px 8px;border-bottom:1px solid #dfe5ec;font-size:10px;letter-spacing:0.05em;text-transform:uppercase;">Device</th>
+<th align="left" style="padding:9px 8px;border-bottom:1px solid #dfe5ec;font-size:10px;letter-spacing:0.05em;text-transform:uppercase;">Serial</th>
+<th align="left" style="padding:9px 8px;border-bottom:1px solid #dfe5ec;font-size:10px;letter-spacing:0.05em;text-transform:uppercase;">Host</th>
+<th align="left" style="padding:9px 8px;border-bottom:1px solid #dfe5ec;font-size:10px;letter-spacing:0.05em;text-transform:uppercase;">Last seen</th>
 </tr>`)
 
 	for _, d := range devices {
@@ -1025,23 +1078,18 @@ func formatHTMLMissedPingDigest(devices []MissedPingDigestDevice, count, timeout
 		}
 
 		fmt.Fprintf(&b, `<tr>
-<td style="padding:5px 6px;border:1px solid #dee2e6;color:#dc3545;"><strong>%s</strong></td>
-<td style="padding:5px 6px;border:1px solid #dee2e6;color:#495057;">%s</td>
-<td style="padding:5px 6px;border:1px solid #dee2e6;color:#495057;">%s</td>
-<td style="padding:5px 6px;border:1px solid #dee2e6;color:#495057;">%s ago</td>
+<td style="padding:10px 8px;border-bottom:1px solid #e6eaf0;color:#b42318;"><strong>%s</strong></td>
+<td style="padding:10px 8px;border-bottom:1px solid #e6eaf0;color:#475467;word-break:break-word;">%s</td>
+<td style="padding:10px 8px;border-bottom:1px solid #e6eaf0;color:#475467;word-break:break-word;">%s</td>
+<td style="padding:10px 8px;border-bottom:1px solid #e6eaf0;color:#475467;">%s ago</td>
 </tr>`, htmlEscape(name), htmlEscape(serial), htmlEscape(host), ago)
 	}
 
 	b.WriteString(`</table></td></tr>`)
 
 	// Footer
-	fmt.Fprintf(&b, `<tr><td style="padding:15px 30px;background-color:#f8f9fa;border-top:1px solid #dee2e6;">
-<p style="margin:0;color:#6c757d;font-size:11px;">Generated %s by Scrutiny</p>
-</td></tr>`, time.Now().Format("Jan 2, 2006 15:04 MST"))
-
-	b.WriteString(`</table>
-</td></tr></table>
-</body></html>`)
+	writeNotificationEmailFooter(&b, fmt.Sprintf("Generated %s by Scrutiny", time.Now().Format("Jan 2, 2006 15:04 MST")))
+	writeNotificationEmailEnd(&b)
 
 	return b.String()
 }
