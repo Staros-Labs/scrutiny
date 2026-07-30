@@ -2,6 +2,12 @@
 
 All notable changes to Scrutiny will be documented in this file.
 
+## [1.68.0](https://github.com/Starosdev/scrutiny/compare/v1.67.1...v1.68.0) (2026-07-30)
+
+### Features
+
+* **notify:** enhance server alert emails ([#690](https://github.com/Starosdev/scrutiny/issues/690)) ([3c4690f](https://github.com/Starosdev/scrutiny/commit/3c4690f8feff3a0bc52a8ea7c8139f4145736afe))
+
 ## [1.67.1](https://github.com/Starosdev/scrutiny/compare/v1.67.0...v1.67.1) (2026-07-28)
 
 ### Bug Fixes
