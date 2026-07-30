@@ -280,12 +280,15 @@ func (p *Payload) GenerateSubject() string {
 	if len(p.DeviceLabel) > 0 {
 		deviceIdentifier = fmt.Sprintf(fmtLabelWithName, p.DeviceLabel, p.DeviceName)
 	}
-	if len(p.HostId) > 0 {
-		subject = fmt.Sprintf("Scrutiny SMART error (%s) detected on [host]device: [%s]%s", p.FailureType, p.HostId, deviceIdentifier)
-	} else {
-		subject = fmt.Sprintf("Scrutiny SMART error (%s) detected on device: %s", p.FailureType, deviceIdentifier)
-	}
+	subject = fmt.Sprintf("Scrutiny SMART error (%s) detected on %s", p.FailureType, formatSubjectDevice(deviceIdentifier, p.HostId))
 	return subject
+}
+
+func formatSubjectDevice(deviceIdentifier, hostID string) string {
+	if hostID == "" {
+		return fmt.Sprintf("device: %s", deviceIdentifier)
+	}
+	return fmt.Sprintf("device: %s (host: %s)", deviceIdentifier, hostID)
 }
 
 func (p *Payload) GenerateMessage() string {
@@ -323,15 +326,11 @@ func (p *Payload) GenerateHTMLMessage() string {
 	rows := [][2]string{
 		{notifyRowFailureType, p.FailureType},
 		{"Device", payloadDeviceIdentifier(p.DeviceName, p.DeviceLabel)},
-		{"Device Name", p.DeviceName},
 		{notifyRowDeviceSerial, p.DeviceSerial},
 		{notifyRowDeviceType, p.DeviceType},
 	}
 	if len(p.HostId) > 0 {
 		rows = append(rows, [2]string{"Host Id", p.HostId})
-	}
-	if len(p.DeviceLabel) > 0 {
-		rows = append(rows, [2]string{"Device Label", p.DeviceLabel})
 	}
 	rows = append(rows, [2]string{"Date", p.Date})
 
@@ -899,10 +898,7 @@ func (p *MissedPingPayload) generateSubject() string {
 	if len(p.DeviceLabel) > 0 {
 		deviceIdentifier = fmt.Sprintf(fmtLabelWithName, p.DeviceLabel, p.DeviceName)
 	}
-	if len(p.HostId) > 0 {
-		return fmt.Sprintf("Scrutiny collector missed ping on [host]device: [%s]%s", p.HostId, deviceIdentifier)
-	}
-	return fmt.Sprintf("Scrutiny collector missed ping on device: %s", deviceIdentifier)
+	return fmt.Sprintf("Scrutiny collector missed ping on %s", formatSubjectDevice(deviceIdentifier, p.HostId))
 }
 
 func (p *MissedPingPayload) generateMessage() string {
