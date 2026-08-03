@@ -635,6 +635,12 @@ func (sr *scrutinyRepository) Migrate(ctx context.Context) error {
 				}).Error
 			},
 		},
+		{
+			ID: "m20260803000000", // repair AnalogJ/scrutiny 0.9.x device identity and history (#694)
+			Migrate: func(tx *gorm.DB) error {
+				return sr.migrateM20260803000000(ctx, tx)
+			},
+		},
 	})
 
 	if err := m.Migrate(); err != nil {
