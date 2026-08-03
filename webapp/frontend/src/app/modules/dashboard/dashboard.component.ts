@@ -33,6 +33,7 @@ import { TemperatureDeviceOption } from 'app/core/models/device-summary-temp-res
 import { SmartTemperatureModel } from 'app/core/models/measurements/smart-temperature-model';
 import { MatInput } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
+import { alignTemperatureChartSeries, TemperatureChartSeries } from './temperature-chart-series';
 
 const DASHBOARD_SHELL_WIDTHS: Record<DashboardColumns, string> = {
     2: '1440px',
@@ -233,8 +234,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         return DeviceTitlePipe.deviceDashboardTitle(deviceSummary.device);
     }
 
-    private _deviceDataTemperatureSeries(): any[] {
-        const deviceTemperatureSeries = [];
+    private _deviceDataTemperatureSeries(): TemperatureChartSeries[] {
+        const deviceTemperatureSeries: TemperatureChartSeries[] = [];
 
         for (const deviceID of this.temperatureSelection.ids) {
             const tempHistory = this.temperatureHistory[deviceID];
@@ -244,7 +245,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
             const deviceName = this.temperatureDeviceTitle(this.temperatureDevices.find((device) => device.device_id === deviceID));
 
-            const deviceSeriesMetadata = {
+            const deviceSeriesMetadata: TemperatureChartSeries = {
                 name: deviceName,
                 data: [],
             };
@@ -267,19 +268,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             }
             deviceTemperatureSeries.push(deviceSeriesMetadata);
         }
-        return deviceTemperatureSeries;
-    }
-
-    private _patchSharedTooltip(chartContext: any): void {
-        try {
-            const tooltip = chartContext.w.globals.tooltip;
-            if (tooltip?.tooltipUtil) {
-                tooltip.tooltipUtil.isInitialSeriesSameLen = () => true;
-                tooltip.tooltipUtil.isXoverlap = () => true;
-            }
-        } catch {
-            // Silently fail if ApexCharts internals change
-        }
+        return alignTemperatureChartSeries(deviceTemperatureSeries);
     }
 
     private determineTheme(config: AppConfig): string {
@@ -323,14 +312,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 toolbar: {
                     show: false,
                 },
-                events: {
-                    mounted: (chartContext) => {
-                        this._patchSharedTooltip(chartContext);
-                    },
-                    updated: (chartContext) => {
-                        this._patchSharedTooltip(chartContext);
-                    },
-                },
             },
             colors: ['#667eea', '#9066ea', '#66c0ea', '#66ead2', '#d266ea', '#66ea90'],
             fill: {
@@ -366,6 +347,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 theme: 'dark',
                 shared: true,
                 intersect: false,
+                fixed: {
+                    enabled: true,
+                    position: 'topLeft',
+                    offsetX: 12,
+                    offsetY: 12,
+                },
                 x: {
                     format: apexShortDateTime(this.config.time_format, true),
                 },
