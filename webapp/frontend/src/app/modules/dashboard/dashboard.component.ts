@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild, ViewEncapsulation, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ApexOptions, ChartComponent } from 'ng-apexcharts';
@@ -111,8 +111,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private readonly _unsubscribeAll: Subject<void>;
     private readonly systemPrefersDark: boolean;
     private temperatureRequestID = 0;
-    @ViewChild('tempChart', { static: false }) tempChart: ChartComponent;
-
     /**
      * Constructor
      *
@@ -609,7 +607,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const requestID = ++this.temperatureRequestID;
         if (selectedDeviceIDs.length === 0) {
             this.temperatureHistory = {};
-            this.tempChart?.updateSeries([]);
+            this._updateTemperatureChartSeries([]);
             this._changeDetectorRef.markForCheck();
             return;
         }
@@ -621,9 +619,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
                     return;
                 }
                 this.temperatureHistory = tempHistoryData;
-                this.tempChart?.updateSeries(this._deviceDataTemperatureSeries());
+                this._updateTemperatureChartSeries(this._deviceDataTemperatureSeries());
                 this._changeDetectorRef.markForCheck();
             });
+    }
+
+    private _updateTemperatureChartSeries(series: TemperatureChartSeries[]): void {
+        if (!this.temperatureOptions) {
+            return;
+        }
+        this.temperatureOptions = { ...this.temperatureOptions, series };
     }
 
     getMdadmArrayStatusColorClass(array: MDADMArrayModel): string {
