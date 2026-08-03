@@ -32,3 +32,19 @@ func Test_MergeConfigMap(t *testing.T) {
 	require.Equal(t, "layout", testConfig.GetString("user.layout"))
 
 }
+
+func TestWebZFSAllowPoolModificationsDefaultsToTrue(t *testing.T) {
+	t.Setenv("SCRUTINY_WEB_ZFS_ALLOW_POOL_MODIFICATIONS", "")
+
+	testConfig, err := Create()
+	require.NoError(t, err)
+	require.True(t, testConfig.GetBool(WebZFSAllowPoolModificationsKey))
+}
+
+func TestWebZFSAllowPoolModificationsSupportsEnvironmentOverride(t *testing.T) {
+	t.Setenv("SCRUTINY_WEB_ZFS_ALLOW_POOL_MODIFICATIONS", "false")
+
+	testConfig, err := Create()
+	require.NoError(t, err)
+	require.False(t, testConfig.GetBool(WebZFSAllowPoolModificationsKey))
+}

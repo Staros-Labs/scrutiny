@@ -46,6 +46,21 @@ type AppEngine struct {
 	ReportScheduler   *reports.Scheduler
 }
 
+func registerZFSPoolRoutes(zfs *gin.RouterGroup, allowPoolModifications bool) {
+	zfs.POST("/pools/register", handler.RegisterZFSPools)         // used by ZFS Collector to register pools
+	zfs.GET(apiSummaryPath, handler.GetZFSPoolsSummary)           // used by ZFS Dashboard
+	zfs.POST("/pool/:guid/metrics", handler.UploadZFSPoolMetrics) // used by ZFS Collector to upload metrics
+	zfs.GET("/pool/:guid/details", handler.GetZFSPoolDetails)     // used by ZFS Pool Details view
+
+	zfsPoolMutations := zfs.Group("/pool/:guid", middleware.ZFSPoolModificationGuard(allowPoolModifications))
+	zfsPoolMutations.POST("/archive", handler.ArchiveZFSPool)
+	zfsPoolMutations.POST("/unarchive", handler.UnarchiveZFSPool)
+	zfsPoolMutations.POST("/mute", handler.MuteZFSPool)
+	zfsPoolMutations.POST("/unmute", handler.UnmuteZFSPool)
+	zfsPoolMutations.POST("/label", handler.UpdateZFSPoolLabel)
+	zfsPoolMutations.DELETE("", handler.DeleteZFSPool)
+}
+
 func (ae *AppEngine) registerMiddleware(r *gin.Engine, logger *logrus.Entry) {
 	r.Use(middleware.LoggerMiddleware(logger))
 	r.Use(middleware.RepositoryMiddleware(ae.Config, logger))
@@ -184,16 +199,7 @@ func (ae *AppEngine) Setup(logger *logrus.Entry) *gin.Engine {
 			// ZFS Pool API endpoints
 			zfs := api.Group("/zfs")
 			{
-				zfs.POST("/pools/register", handler.RegisterZFSPools)         // used by ZFS Collector to register pools
-				zfs.GET(apiSummaryPath, handler.GetZFSPoolsSummary)           // used by ZFS Dashboard
-				zfs.POST("/pool/:guid/metrics", handler.UploadZFSPoolMetrics) // used by ZFS Collector to upload metrics
-				zfs.GET("/pool/:guid/details", handler.GetZFSPoolDetails)     // used by ZFS Pool Details view
-				zfs.POST("/pool/:guid/archive", handler.ArchiveZFSPool)       // used by UI to archive pool
-				zfs.POST("/pool/:guid/unarchive", handler.UnarchiveZFSPool)   // used by UI to unarchive pool
-				zfs.POST("/pool/:guid/mute", handler.MuteZFSPool)             // used by UI to mute pool
-				zfs.POST("/pool/:guid/unmute", handler.UnmuteZFSPool)         // used by UI to unmute pool
-				zfs.POST("/pool/:guid/label", handler.UpdateZFSPoolLabel)     // used by UI to set pool label
-				zfs.DELETE("/pool/:guid", handler.DeleteZFSPool)              // used by UI to delete pool
+				registerZFSPoolRoutes(zfs, ae.Config.GetBool(config.WebZFSAllowPoolModificationsKey))
 			}
 
 			btrfs := api.Group("/btrfs")

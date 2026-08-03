@@ -34,9 +34,10 @@ func SaveSettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":                   true,
-		"settings":                  settings,
-		"server_version":            version.VERSION,
-		"collector_trigger_enabled": collectorTriggerEnabled(),
+		"success":                        true,
+		"settings":                       settings,
+		"server_version":                 version.VERSION,
+		"collector_trigger_enabled":      collectorTriggerEnabled(),
+		"zfs_pool_modifications_allowed": zfsPoolModificationsAllowed(c),
 	})
 }

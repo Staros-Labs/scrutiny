@@ -775,6 +775,7 @@ Dots and dashes in key names become underscores.
 | `web.database.location` | `SCRUTINY_WEB_DATABASE_LOCATION` | `/opt/scrutiny/config/scrutiny.db` |
 | `web.database.journal_mode` | `SCRUTINY_WEB_DATABASE_JOURNAL_MODE` | `WAL` |
 | `web.src.frontend.path` | `SCRUTINY_WEB_SRC_FRONTEND_PATH` | `/opt/scrutiny/web` |
+| `web.zfs.allow_pool_modifications` | `SCRUTINY_WEB_ZFS_ALLOW_POOL_MODIFICATIONS` | `true` |
 | `web.influxdb.scheme` | `SCRUTINY_WEB_INFLUXDB_SCHEME` | `http` |
 | `web.influxdb.host` | `SCRUTINY_WEB_INFLUXDB_HOST` | `localhost` |
 | `web.influxdb.port` | `SCRUTINY_WEB_INFLUXDB_PORT` | `8086` |

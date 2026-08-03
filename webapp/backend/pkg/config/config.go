@@ -12,6 +12,9 @@ import (
 
 const DB_USER_SETTINGS_SUBKEY = "user"
 
+// WebZFSAllowPoolModificationsKey controls whether user-facing ZFS pool mutation endpoints are enabled.
+const WebZFSAllowPoolModificationsKey = "web.zfs.allow_pool_modifications"
+
 // When initializing this class the following methods must be called:
 // Config.New
 // Config.Init
@@ -40,6 +43,7 @@ func (c *configuration) Init() error {
 	c.SetDefault("web.src.frontend.path", "/opt/scrutiny/web")
 	c.SetDefault("web.database.location", "/opt/scrutiny/config/scrutiny.db")
 	c.SetDefault("web.database.journal_mode", "WAL")
+	c.SetDefault(WebZFSAllowPoolModificationsKey, true)
 
 	c.SetDefault("log.level", "INFO")
 	c.SetDefault("log.file", "")

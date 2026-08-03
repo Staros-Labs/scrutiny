@@ -42,9 +42,8 @@
         <div class="ml-auto flex items-center">
             @if (poolSummary.archived) {
             <mat-icon [svgIcon]="'archive'"></mat-icon>
-            }
-
-            <button mat-icon-button [matMenuTriggerFor]="poolActionsMenu">
+            } @if (config?.zfs_pool_modifications_allowed === true) {
+            <button mat-icon-button [matMenuTriggerFor]="poolActionsMenu" aria-label="Open ZFS pool actions">
                 <mat-icon [svgIcon]="'more_vert'"></mat-icon>
             </button>
 
@@ -73,6 +72,7 @@
                     </span>
                 </a>
             </mat-menu>
+            }
         </div>
         }
     </div>

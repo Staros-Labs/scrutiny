@@ -1097,7 +1097,7 @@ paths:
       summary: Get ZFS pool summary
       responses:
         "200":
-          description: ZFS pools
+          description: Active and archived ZFS pools for dashboard filtering
           content:
             application/json:
               schema:
@@ -1109,8 +1109,8 @@ paths:
                     type: object
                     properties:
                       pools:
-                        type: array
-                        items:
+                        type: object
+                        additionalProperties:
                           $ref: "#/components/schemas/ZFSPool"
         "500":
           $ref: "#/components/responses/ErrorResponse"
@@ -1162,6 +1162,8 @@ paths:
           $ref: "#/components/responses/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/zfs/pool/{guid}/unarchive:
     post:
       tags: [ZFS]
@@ -1173,6 +1175,8 @@ paths:
           $ref: "#/components/responses/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/zfs/pool/{guid}/mute:
     post:
       tags: [ZFS]
@@ -1184,6 +1188,8 @@ paths:
           $ref: "#/components/responses/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/zfs/pool/{guid}/unmute:
     post:
       tags: [ZFS]
@@ -1195,6 +1201,8 @@ paths:
           $ref: "#/components/responses/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/zfs/pool/{guid}/label:
     post:
       tags: [ZFS]
@@ -1216,6 +1224,8 @@ paths:
           $ref: "#/components/responses/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/zfs/pool/{guid}:
     delete:
       tags: [ZFS]
@@ -1227,6 +1237,8 @@ paths:
           $ref: "#/components/responses/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/btrfs/filesystems/register:
     post:
       tags: [Btrfs]
@@ -1538,6 +1550,12 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     Unauthorized:
       description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Operation disabled by server configuration
       content:
         application/json:
           schema:
@@ -2148,6 +2166,8 @@ components:
           type: string
         collector_trigger_enabled:
           type: boolean
+        zfs_pool_modifications_allowed:
+          type: boolean
     SaveSettingsResponse:
       type: object
       properties:
@@ -2155,6 +2175,12 @@ components:
           type: boolean
         settings:
           $ref: "#/components/schemas/Settings"
+        server_version:
+          type: string
+        collector_trigger_enabled:
+          type: boolean
+        zfs_pool_modifications_allowed:
+          type: boolean
     AttributeOverride:
       type: object
       properties:

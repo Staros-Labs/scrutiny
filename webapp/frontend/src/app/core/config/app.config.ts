@@ -173,6 +173,7 @@ export interface AppConfig {
     // Server capabilities (populated from API response, not stored in settings)
     server_version?: string;
     collector_trigger_enabled?: boolean;
+    zfs_pool_modifications_allowed?: boolean;
 }
 
 /**
@@ -199,6 +200,9 @@ export const appConfig: AppConfig = {
 
     time_format: '24',
     line_stroke: 'smooth',
+
+    // Server must explicitly enable mutation controls after remote config loads.
+    zfs_pool_modifications_allowed: false,
 
     collector: {
         retrieve_sct_temperature_history: true,
