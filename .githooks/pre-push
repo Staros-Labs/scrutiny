@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+"$(git rev-parse --show-toplevel)/scripts/require-linear-session.sh" push
+"$(git rev-parse --show-toplevel)/scripts/require-agent-lease.sh" deliver

@@ -5,18 +5,18 @@ This guide is specifically for people who are on a Windows machine using [WSL](h
 Scrutiny is made up of three components: an influxdb Database, a collector and a webapp/api. Docker will be used for
 the influxdb and webapp/API, the collector component will be facilitated by [Windows Task Scheduler](https://learn.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page).
 
-> **NOTE:** If you are **NOT** using WSL with docker, then the easiest way to get started with [Scrutiny is the omnibus Docker image](https://github.com/Starosdev/scrutiny#docker).
+> **NOTE:** If you are **NOT** using WSL with docker, then the easiest way to get started with [Scrutiny is the omnibus Docker image](https://github.com/Staros-Labs/scrutiny#docker).
 
 ## InfluxDB and Webapp/API (Docker)
 
-1. Copy the [example.hubspoke.docker-compose.yml](https://github.com/Starosdev/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml) 
+1. Copy the [example.hubspoke.docker-compose.yml](https://github.com/Staros-Labs/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml)
 file and delete the collector section near the bottom of the file.
 2. Run `docker-compose up -d` to verify that the DB and webapp are working correctly and once its completed, your webapp
 should be up and running but the dashboard will be empty (default location is `localhost:8080`)
 
 ## Collector (Windows Task Scheduler)
 
-1. Download the latest `scrutiny-collector-metrics-windows-amd64.exe` from the [releases page](https://github.com/Starosdev/scrutiny/releases) (under assets)
+1. Download the latest `scrutiny-collector-metrics-windows-amd64.exe` from the [releases page](https://github.com/Staros-Labs/scrutiny/releases) (under assets)
 2. On your windows host, open [Windows Task Scheduler](https://www.wikihow.com/Open-Task-Scheduler-in-Windows-10) as **Administrator**
    1. In the **Start Menu** (Windows key), type `Task Scheduler` and then right click `Run as Administrator` to open
 3. On the status bar (under the `action` tab), click `Create Task...`
@@ -40,7 +40,7 @@ should be up and running but the dashboard will be empty (default location is `l
          > **NOTE:** 
          > * Make sure that you put the correct port number (as specified in the docker-compose file) for the webapp (default is `8080`)
          > * The `--config` param is optional and is not needed if you just want to use the default collector config, see 
-      [example.collector.yaml](https://github.com/Starosdev/scrutiny/blob/master/example.collector.yaml) for more info on the collector config.
+      [example.collector.yaml](https://github.com/Staros-Labs/scrutiny/blob/master/example.collector.yaml) for more info on the collector config.
       3. In the **Start in (optional)** field, put: FOLDER_PATH_TO_YOUR `scrutiny-collector-metrics-windows-amd64.exe` file
           > **NOTE:** Must be exact and do not include `scrutiny-collector-metrics-windows-amd64.exe` in the path
       4. Click Ok when finished
@@ -53,7 +53,6 @@ should be up and running but the dashboard will be empty (default location is `l
 10. Next, once satisfied with everything, click Ok
 11. Then, find your newly created task (by its name) in the scheduler task list and then manually run it (right click it and then click `Run`)
 12. Finally, refresh your dashboard after a minute or two and your drive information should have populated the webapp dashboard.
-
 
 
 

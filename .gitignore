@@ -85,8 +85,6 @@ PLANNING.md
 .codex/
 # Local builder skill files
 .codex/skills/
-# Local repo instructions
-AGENTS.md
 
 # Local compiled binaries
 collector-dev
@@ -96,8 +94,6 @@ scrutiny-dev
 # Local plans (not committed)
 docs/plans/
 
-# Local builder instructions
-AGENTS.md
 
 # Session progress tracking
 OVERRIDE_FIX_PROGRESS.md
@@ -120,8 +116,7 @@ test_flux.go
 CONTEXT.md
 docs/adr/
 
-# Agent instruction and session surfaces are intentionally local-only.
-AGENTS.md
+# Local agent session surfaces are intentionally local-only.
 CLAUDE.md
 .agents/
 .claude/
@@ -131,3 +126,6 @@ CLAUDE.md
 docs/agents/invariants.md
 docs/agents/danger-zones.md
 docs/agents/review-checklist.md
+.codex-session-linear
+.codex-session-active
+.git-only-rollout-session

@@ -47,7 +47,7 @@ https://docs.influxdata.com/influxdb/v2/install/
 
 To ensure that all data is correctly stored, you must also persist the InfluxDB database directory
 
-- If you're using the Official Scrutiny Omnibus image (`ghcr.io/Starosdev/scrutiny:latest-omnibus`), the path is `/opt/scrutiny/influxdb`
+- If you're using the Official Scrutiny Omnibus image (`ghcr.io/Staros-Labs/scrutiny:latest-omnibus`), the path is `/opt/scrutiny/influxdb`
 - If you're deploying in Hub/Spoke mode with the InfluxDB maintained image (`influxdb:2.9`), the path is `/var/lib/influxdb2`
 
 If you attempt to restart Scrutiny but you forgot to persist the InfluxDB directory, you will get an error message like follows:
@@ -111,12 +111,12 @@ This usually relates to either:
 - Updated versions of the [LSIO Scrutiny images are broken](https://github.com/linuxserver/docker-scrutiny/issues/22),
   as they have not installed InfluxDB which is a required dependency of Scrutiny v0.4.x
   - You can revert to an earlier version of the LSIO image (`lscr.io/linuxserver/scrutiny:060ac7b8-ls34`), or just
-    change to the official Scrutiny image (`ghcr.io/Starosdev/scrutiny:latest-omnibus`)
+    change to the official Scrutiny image (`ghcr.io/Staros-Labs/scrutiny:latest-omnibus`)
 
 Here's a couple of confirmed working docker-compose files that you may want to look at:
 
-- https://github.com/Starosdev/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml
-- https://github.com/Starosdev/scrutiny/blob/master/docker/example.omnibus.docker-compose.yml
+- https://github.com/Staros-Labs/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml
+- https://github.com/Staros-Labs/scrutiny/blob/master/docker/example.omnibus.docker-compose.yml
 
 ## Bring your own InfluxDB
 
@@ -423,7 +423,7 @@ done, you can start the Scrutiny server
 ## Customize InfluxDB Admin Username & Password
 
 The full set of InfluxDB configuration options are available
-in [code](https://github.com/Starosdev/scrutiny/blob/master/webapp/backend/pkg/config/config.go#L49-L51)
+in [code](https://github.com/Staros-Labs/scrutiny/blob/master/webapp/backend/pkg/config/config.go#L49-L51)
 .
 
 During first startup Scrutiny will connect to the unprotected InfluxDB server, start the setup process (via API) using a

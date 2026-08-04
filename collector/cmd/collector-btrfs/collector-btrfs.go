@@ -55,7 +55,7 @@ func main() {
 			if !startup.ShouldPrintBanner() {
 				return nil
 			}
-			collectorName := "Starosdev/scrutiny/btrfs"
+			collectorName := "Staros-Labs/scrutiny/btrfs"
 
 			var versionInfo string
 			if len(goos) > 0 && len(goarch) > 0 {

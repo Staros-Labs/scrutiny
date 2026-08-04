@@ -79,7 +79,7 @@ services:
       COLLECTOR_API_ENDPOINT: 'http://web:8080'
       COLLECTOR_HOST_ID: 'scrutiny-collector-hostname'
       # If true forces the collector to run on startup (cron will be started after the collector completes)
-      # see: https://github.com/Starosdev/scrutiny/blob/master/docs/TROUBLESHOOTING_DEVICE_COLLECTOR.md#collector-trigger-on-startup
+      # see: https://github.com/Staros-Labs/scrutiny/blob/master/docs/TROUBLESHOOTING_DEVICE_COLLECTOR.md#collector-trigger-on-startup
       COLLECTOR_RUN_STARTUP: false
       # Optional collectors stay disabled until their own schedules or run-on-startup flags are set.
       # COLLECTOR_ZFS_CRON_SCHEDULE: '*/15 * * * *'
