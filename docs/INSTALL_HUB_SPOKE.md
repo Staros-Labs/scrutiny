@@ -1,5 +1,5 @@
 >
-See [docker/example.hubspoke.docker-compose.yml](https://github.com/Starosdev/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml)
+See [docker/example.hubspoke.docker-compose.yml](https://github.com/Staros-Labs/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml)
 for a docker-compose file.
 
 > The following guide was contributed by @TinJoy59 in #417
@@ -37,14 +37,14 @@ is triggered every 30min to collect data on the drives. The data is sent to the 
 The Hub consists of Scrutiny Web - a web interface for viewing the SMART data. And InfluxDB, where the smartmon data is
 stored.
 
-[🔗This is the official Hub-Spoke layout in docker-compose.](https://github.com/Starosdev/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml)
+[🔗This is the official Hub-Spoke layout in docker-compose.](https://github.com/Staros-Labs/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml)
 We are going to reuse parts of it. The ENV variables provide the necessary configuration for the initial setup, both for
 InfluxDB and Scrutiny.
 
 If you are working with and existing InfluxDB instance, you can forgo all the `INIT` variables as they already exist.
 
 The official Scrutiny documentation has a
-sample [scrutiny.yaml ](https://github.com/Starosdev/scrutiny/blob/master/example.scrutiny.yaml)file that normally
+sample [scrutiny.yaml ](https://github.com/Staros-Labs/scrutiny/blob/master/example.scrutiny.yaml)file that normally
 contains the connection and notification details but I always find it easier to configure as much as possible in the
 docker-compose.
 
@@ -81,7 +81,7 @@ services:
   scrutiny:
     restart: unless-stopped
     container_name: scrutiny
-    image: ghcr.io/Starosdev/scrutiny:latest-web
+    image: ghcr.io/Staros-Labs/scrutiny:latest-web
     ports:
       - 8080:8080
     volumes:
@@ -113,7 +113,7 @@ empty because no metrics have been collected yet.
 
 A spoke consists of the Scrutiny Collector binary that is run on a set interval via crontab and sends the data to the
 Hub. The official
-documentation [describes the manual setup of the Collector](https://github.com/Starosdev/scrutiny/blob/master/docs/INSTALL_MANUAL.md#collector)
+documentation [describes the manual setup of the Collector](https://github.com/Staros-Labs/scrutiny/blob/master/docs/INSTALL_MANUAL.md#collector)
 - dependencies and step by step commands. I have a shortened version that does the same thing but in one line of code.
 
 ```bash
@@ -125,12 +125,12 @@ apt install smartmontools -y
 # 3. Make it exacutable
 # 4. List the contents of the library for confirmation
 mkdir -p /opt/scrutiny/bin && \
-curl -L https://github.com/Starosdev/scrutiny/releases/latest/download/scrutiny-collector-metrics-linux-amd64 > /opt/scrutiny/bin/scrutiny-collector-metrics-linux-amd64 && \
+curl -L https://github.com/Staros-Labs/scrutiny/releases/latest/download/scrutiny-collector-metrics-linux-amd64 > /opt/scrutiny/bin/scrutiny-collector-metrics-linux-amd64 && \
 chmod +x /opt/scrutiny/bin/scrutiny-collector-metrics-linux-amd64 && \
 ls -lha /opt/scrutiny/bin
 ```
 
-<p class="callout warning">When downloading Github Release Assests, make sure that you have the correct version. The provided example is with Release v0.5.0. [The release list can be found here.](https://github.com/Starosdev/scrutiny/releases) </p>
+<p class="callout warning">When downloading Github Release Assests, make sure that you have the correct version. The provided example is with Release v0.5.0. [The release list can be found here.](https://github.com/Staros-Labs/scrutiny/releases) </p>
 
 Once the Collector is installed, you can run it with the following command. Make sure to add the correct address and
 port of your Hub as `--api-endpoint`.
@@ -153,14 +153,14 @@ crontab -e
 
 The Collector has its own independent config file that lives in `/opt/scrutiny/config/collector.yaml` but I did not find
 a need to modify
-it. [A default collector.yaml can be found in the official documentation.](https://github.com/Starosdev/scrutiny/blob/master/example.collector.yaml)
+it. [A default collector.yaml can be found in the official documentation.](https://github.com/Staros-Labs/scrutiny/blob/master/example.collector.yaml)
 
 ## Setting up a Spoke ***with*** Docker
 
 ![drawing-3-1671744277](https://user-images.githubusercontent.com/86809766/209230176-87c9e55a-4e3e-4f5f-9609-335d41529f3d.png)
 
 Setting up a remote Spoke in Docker requires you to split
-the [official Hub-Spoke layout docker-compose.yml](https://github.com/Starosdev/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml)
+the [official Hub-Spoke layout docker-compose.yml](https://github.com/Staros-Labs/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml)
 . In the following docker-compose you need to provide the `${API_ENDPOINT}`, in my case `http://192.168.0.100:8080`.
 Also all drives that you wish to monitor need to be presented to the container under `devices`.
 
@@ -173,7 +173,7 @@ services:
 
   collector:
     restart: unless-stopped
-    image: 'ghcr.io/Starosdev/scrutiny:latest-collector'
+    image: 'ghcr.io/Staros-Labs/scrutiny:latest-collector'
     cap_add:
       - SYS_RAWIO
     volumes:
