@@ -480,7 +480,7 @@ func (sr *scrutinyRepository) Migrate(ctx context.Context) error {
 		// The unique index caused INSERT failures for devices sharing the same
 		// non-empty WWN (e.g. multiple disks reporting 0x0000000000000000).
 		// Since device_id is now the primary key, wwn uniqueness is no longer needed.
-		// Fixes: https://github.com/Starosdev/scrutiny/issues/314
+		// Fixes: https://github.com/Staros-Labs/scrutiny/issues/314
 		{
 			ID: "m20260402000000",
 			Migrate: func(tx *gorm.DB) error {
@@ -654,13 +654,13 @@ func (sr *scrutinyRepository) Migrate(ctx context.Context) error {
 				"3. Verify the volume mount has correct ownership\n\n"+
 				"Original error: %v", err)
 		} else {
-			sr.logger.Errorf("Database migration failed with error.\nPlease open a github issue at https://github.com/Starosdev/scrutiny and attach a copy of your scrutiny.db file.\n%v", err)
+			sr.logger.Errorf("Database migration failed with error.\nPlease open a github issue at https://github.com/Staros-Labs/scrutiny and attach a copy of your scrutiny.db file.\n%v", err)
 		}
 		return err
 	}
 
 	if err := sr.ensureDeviceModelFamilyColumn(); err != nil {
-		sr.logger.Errorf("Database schema verification failed.\nPlease open a github issue at https://github.com/Starosdev/scrutiny and attach a copy of your scrutiny.db file.\n%v", err)
+		sr.logger.Errorf("Database schema verification failed.\nPlease open a github issue at https://github.com/Staros-Labs/scrutiny and attach a copy of your scrutiny.db file.\n%v", err)
 		return err
 	}
 	sr.logger.Infoln("Database migration completed successfully")
@@ -689,7 +689,7 @@ func (sr *scrutinyRepository) Migrate(ctx context.Context) error {
 				"3. Verify the volume mount has correct ownership\n\n"+
 				"Original error: %v", err)
 		} else {
-			sr.logger.Errorf("SQLite global configuration migrations failed with error.\nPlease open a github issue at https://github.com/Starosdev/scrutiny and attach a copy of your scrutiny.db file.\n%v", err)
+			sr.logger.Errorf("SQLite global configuration migrations failed with error.\nPlease open a github issue at https://github.com/Staros-Labs/scrutiny and attach a copy of your scrutiny.db file.\n%v", err)
 		}
 		return err
 	}

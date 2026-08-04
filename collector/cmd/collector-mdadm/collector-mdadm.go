@@ -53,12 +53,12 @@ func main() {
 		Authors: []*cli.Author{
 			{
 				Name:  "Scrutiny Contributors",
-				Email: "https://github.com/Starosdev/scrutiny",
+				Email: "https://github.com/Staros-Labs/scrutiny",
 			},
 		},
 		Before: func(c *cli.Context) error {
 			if startup.ShouldPrintBanner() {
-				color.New(color.FgGreen).Fprintf(c.App.Writer, "%s", collectorBanner("Starosdev/scrutiny/mdadm"))
+				color.New(color.FgGreen).Fprintf(c.App.Writer, "%s", collectorBanner("Staros-Labs/scrutiny/mdadm"))
 			}
 			return nil
 		},

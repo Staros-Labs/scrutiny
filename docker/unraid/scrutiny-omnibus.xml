@@ -2,7 +2,7 @@
 <Container version="2">
   <Name>scrutiny</Name>
   <Repository>ghcr.io/starosdev/scrutiny:latest-omnibus</Repository>
-  <Registry>https://github.com/Starosdev/scrutiny/pkgs/container/scrutiny</Registry>
+  <Registry>https://github.com/Staros-Labs/scrutiny/pkgs/container/scrutiny</Registry>
   <Branch>
     <Tag>latest-omnibus</Tag>
     <TagDescription>Stable omnibus (all-in-one) release</TagDescription>
@@ -13,12 +13,12 @@
   </Branch>
   <Network>bridge</Network>
   <Privileged>false</Privileged>
-  <Support>https://github.com/Starosdev/scrutiny/issues</Support>
-  <Project>https://github.com/Starosdev/scrutiny</Project>
+  <Support>https://github.com/Staros-Labs/scrutiny/issues</Support>
+  <Project>https://github.com/Staros-Labs/scrutiny</Project>
   <Overview>Hard Drive S.M.A.R.T Monitoring, Historical Trends and Real World Failure Thresholds. Scrutiny is a hard drive health dashboard and monitoring solution, merging manufacturer-provided S.M.A.R.T metrics with real-world failure rates from Backblaze. Includes web dashboard, metrics collector, and InfluxDB in a single container.</Overview>
   <Category>Tools: Productivity:</Category>
   <WebUI>http://[IP]:[PORT:8080]/web/dashboard</WebUI>
-  <Icon>https://raw.githubusercontent.com/Starosdev/scrutiny/master/webapp/frontend/src/assets/images/logo/scrutiny-logo-dark.png</Icon>
+  <Icon>https://raw.githubusercontent.com/Staros-Labs/scrutiny/master/webapp/frontend/src/assets/images/logo/scrutiny-logo-dark.png</Icon>
   <ExtraParams>--cap-add SYS_RAWIO --cap-add SYS_ADMIN</ExtraParams>
   <Shell>bash</Shell>
   <Config Name="WebUI Port" Target="8080" Default="8080" Mode="tcp" Description="Web dashboard port." Type="Port" Display="always" Required="true" Mask="false"/>

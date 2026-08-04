@@ -41,5 +41,5 @@ fi
 log error "InfluxDB 2.9 upgrade blocked: existing Omnibus data detected at ${data_dir}"
 log error "stop Scrutiny and back up the complete InfluxDB data directory before continuing"
 log error "after the backup is complete, set SCRUTINY_INFLUXDB_29_BACKUP_CONFIRMED=true and restart"
-log error "instructions: https://github.com/Starosdev/scrutiny/blob/master/docs/DEPLOYMENTS.md#omnibus-influxdb-29-upgrade-preflight"
+log error "instructions: https://github.com/Staros-Labs/scrutiny/blob/master/docs/DEPLOYMENTS.md#omnibus-influxdb-29-upgrade-preflight"
 exit 78

@@ -2,19 +2,19 @@
 <Container version="2">
   <Name>scrutiny-web</Name>
   <Repository>ghcr.io/starosdev/scrutiny:latest-web</Repository>
-  <Registry>https://github.com/Starosdev/scrutiny/pkgs/container/scrutiny</Registry>
+  <Registry>https://github.com/Staros-Labs/scrutiny/pkgs/container/scrutiny</Registry>
   <Branch>
     <Tag>latest-web</Tag>
     <TagDescription>Stable web server release</TagDescription>
   </Branch>
   <Network>bridge</Network>
   <Privileged>false</Privileged>
-  <Support>https://github.com/Starosdev/scrutiny/issues</Support>
-  <Project>https://github.com/Starosdev/scrutiny</Project>
+  <Support>https://github.com/Staros-Labs/scrutiny/issues</Support>
+  <Project>https://github.com/Staros-Labs/scrutiny</Project>
   <Overview>Scrutiny Web Server (Hub/Spoke mode). Provides the web dashboard and API for S.M.A.R.T monitoring. Requires a separate InfluxDB instance and one or more Scrutiny collector containers. Use the omnibus template instead if you want an all-in-one deployment.</Overview>
   <Category>Tools: Productivity:</Category>
   <WebUI>http://[IP]:[PORT:8080]/web/dashboard</WebUI>
-  <Icon>https://raw.githubusercontent.com/Starosdev/scrutiny/master/webapp/frontend/src/assets/images/logo/scrutiny-logo-dark.png</Icon>
+  <Icon>https://raw.githubusercontent.com/Staros-Labs/scrutiny/master/webapp/frontend/src/assets/images/logo/scrutiny-logo-dark.png</Icon>
   <Shell>bash</Shell>
   <Config Name="WebUI Port" Target="8080" Default="8080" Mode="tcp" Description="Web dashboard port." Type="Port" Display="always" Required="true" Mask="false"/>
   <Config Name="Config" Target="/opt/scrutiny/config" Default="/mnt/user/appdata/scrutiny-web/config" Mode="rw" Description="Scrutiny configuration and SQLite database." Type="Path" Display="always" Required="true" Mask="false"/>

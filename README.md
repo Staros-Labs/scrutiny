@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/Starosdev/scrutiny">
+  <a href="https://github.com/Staros-Labs/scrutiny">
   <img width="300" alt="scrutiny_view" src="webapp/frontend/src/assets/images/logo/scrutiny-logo-dark.png">
   </a>
 </p>
@@ -7,11 +7,11 @@
 
 # Scrutiny
 
-[![CI](https://github.com/Starosdev/scrutiny/workflows/CI/badge.svg?branch=master)](https://github.com/Starosdev/scrutiny/actions?query=workflow%3ACI)
-[![GitHub license](https://img.shields.io/github/license/Starosdev/scrutiny.svg?style=flat-square)](https://github.com/Starosdev/scrutiny/blob/master/LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Starosdev/scrutiny?style=flat-square)](https://goreportcard.com/report/github.com/Starosdev/scrutiny)
-[![GitHub release](http://img.shields.io/github/release/Starosdev/scrutiny.svg?style=flat-square)](https://github.com/Starosdev/scrutiny/releases)
-[![Docker Pulls](https://img.shields.io/badge/docker-ghcr.io%2Fstarosdev%2Fscrutiny-blue?style=flat-square&logo=docker)](https://github.com/Starosdev/scrutiny/pkgs/container/scrutiny)
+[![CI](https://github.com/Staros-Labs/scrutiny/workflows/CI/badge.svg?branch=master)](https://github.com/Staros-Labs/scrutiny/actions?query=workflow%3ACI)
+[![GitHub license](https://img.shields.io/github/license/Staros-Labs/scrutiny.svg?style=flat-square)](https://github.com/Staros-Labs/scrutiny/blob/master/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Staros-Labs/scrutiny?style=flat-square)](https://goreportcard.com/report/github.com/Staros-Labs/scrutiny)
+[![GitHub release](http://img.shields.io/github/release/Staros-Labs/scrutiny.svg?style=flat-square)](https://github.com/Staros-Labs/scrutiny/releases)
+[![Docker Pulls](https://img.shields.io/badge/docker-ghcr.io%2Fstarosdev%2Fscrutiny-blue?style=flat-square&logo=docker)](https://github.com/Staros-Labs/scrutiny/pkgs/container/scrutiny)
 [![Roadmap](https://img.shields.io/badge/roadmap-view%20roadmap-8b5cf6?style=flat-square)](https://staroslabs.dev/roadmap)
 
 **Hard Drive Health Dashboard & Monitoring for S.M.A.R.T metrics**
@@ -26,7 +26,7 @@ Full credit for the original vision and architecture goes to [AnalogJ](https://g
 
 | | Original | This Fork |
 |---|---|---|
-| **Latest Version** | v0.8.1 (Apr 2024) | [![GitHub release](https://img.shields.io/github/v/release/Starosdev/scrutiny?label=&style=flat-square)](https://github.com/Starosdev/scrutiny/releases) |
+| **Latest Version** | v0.8.1 (Apr 2024) | [![GitHub release](https://img.shields.io/github/v/release/Staros-Labs/scrutiny?label=&style=flat-square)](https://github.com/Staros-Labs/scrutiny/releases) |
 | **Frontend** | Angular 13 | Angular 21 |
 | **Status** | Minimal updates | Actively maintained |
 | **Community PRs** | Many pending | Merged |

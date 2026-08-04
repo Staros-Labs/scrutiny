@@ -1,6 +1,6 @@
 # Manual Install
 
-While the easiest way to get started with [Scrutiny is using Docker](https://github.com/Starosdev/scrutiny#docker),
+While the easiest way to get started with [Scrutiny is using Docker](https://github.com/Staros-Labs/scrutiny#docker),
 it is possible to run it manually without much work. You can even mix and match, using Docker for one component and
 a manual installation for the other. There's also [an installer](INSTALL_ANSIBLE.md) which automates this manual installation procedure.
 
@@ -78,7 +78,7 @@ web:
 #    bucket: 'bucket'
 ```
 
-> Note: for a full list of available configuration options, please check the [example.scrutiny.yaml](https://github.com/Starosdev/scrutiny/blob/master/example.scrutiny.yaml) file.
+> Note: for a full list of available configuration options, please check the [example.scrutiny.yaml](https://github.com/Staros-Labs/scrutiny/blob/master/example.scrutiny.yaml) file.
 
 #### Optional: Home Assistant MQTT Integration
 
@@ -97,7 +97,7 @@ See the [Home Assistant Integration](../README.md#home-assistant-integration-mqt
 
 ### Download Files
 
-Next, we'll download the Scrutiny API binary and frontend files from the [latest Github release](https://github.com/Starosdev/scrutiny/releases).
+Next, we'll download the Scrutiny API binary and frontend files from the [latest Github release](https://github.com/Staros-Labs/scrutiny/releases).
 The files you need to download are named:
 
 - **scrutiny-web-linux-amd64** - save this file to `/opt/scrutiny/bin`
@@ -162,7 +162,7 @@ mkdir -p /opt/scrutiny/bin
 
 ### Download Files
 
-Next, we'll download the Scrutiny collector binary from the [latest Github release](https://github.com/Starosdev/scrutiny/releases).
+Next, we'll download the Scrutiny collector binary from the [latest Github release](https://github.com/Staros-Labs/scrutiny/releases).
 The file you need to download is named:
 
 - **scrutiny-collector-metrics-linux-amd64** - save this file to `/opt/scrutiny/bin`

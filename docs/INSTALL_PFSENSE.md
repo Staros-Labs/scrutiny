@@ -1,6 +1,6 @@
 # pfsense Install
 
-This bascially follows the [Manual collector instructions](https://github.com/Starosdev/scrutiny/blob/master/docs/INSTALL_MANUAL.md#collector) and assumes you are running a hub and spoke deployment and already have the web app setup.
+This bascially follows the [Manual collector instructions](https://github.com/Staros-Labs/scrutiny/blob/master/docs/INSTALL_MANUAL.md#collector) and assumes you are running a hub and spoke deployment and already have the web app setup.
 
 
 ### Dependencies
@@ -25,12 +25,12 @@ mkdir -p /opt/scrutiny/bin
 
 ### Download Files
 
-Next, we'll download the Scrutiny collector binary from the [latest Github release](https://github.com/Starosdev/scrutiny/releases).
+Next, we'll download the Scrutiny collector binary from the [latest Github release](https://github.com/Staros-Labs/scrutiny/releases).
 
 > NOTE: Ensure you have the latest version in the below command
 
 ```
-fetch -o /opt/scrutiny/bin https://github.com/Starosdev/scrutiny/releases/download/vX.X.X/scrutiny-collector-metrics-freebsd-amd64
+fetch -o /opt/scrutiny/bin https://github.com/Staros-Labs/scrutiny/releases/download/vX.X.X/scrutiny-collector-metrics-freebsd-amd64
 ```
 
 
