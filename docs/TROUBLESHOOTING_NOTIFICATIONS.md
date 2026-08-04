@@ -1,6 +1,6 @@
 # Notifications
 
-As documented in [example.scrutiny.yaml](https://github.com/Starosdev/scrutiny/blob/master/example.scrutiny.yaml#L59-L75)
+As documented in [example.scrutiny.yaml](https://github.com/Staros-Labs/scrutiny/blob/master/example.scrutiny.yaml#L59-L75)
 there are multiple ways to configure notifications for Scrutiny.
 
 Scrutiny supports multiple notification engines:

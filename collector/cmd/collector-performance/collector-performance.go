@@ -71,14 +71,14 @@ OPTIONS:
 		Authors: []*cli.Author{
 			{
 				Name:  "Scrutiny Contributors",
-				Email: "https://github.com/Starosdev/scrutiny",
+				Email: "https://github.com/Staros-Labs/scrutiny",
 			},
 		},
 		Before: func(c *cli.Context) error {
 			if !startup.ShouldPrintBanner() {
 				return nil
 			}
-			collectorPerf := "Starosdev/scrutiny/performance"
+			collectorPerf := "Staros-Labs/scrutiny/performance"
 
 			var versionInfo string
 			if len(goos) > 0 && len(goarch) > 0 {

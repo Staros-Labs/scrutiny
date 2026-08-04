@@ -70,7 +70,7 @@ docker run -it --rm \
   --cap-add SYS_RAWIO \
   --device=/dev/sda \
   --device=/dev/sdb \
-  ghcr.io/Starosdev/scrutiny:latest-collector smartctl --scan
+  ghcr.io/Staros-Labs/scrutiny:latest-collector smartctl --scan
 ```
 
 If the output is the same, your devices will be processed by Scrutiny.
@@ -90,7 +90,7 @@ This includes `scsi` and `ata`. A type that only came from `smartctl --scan` is 
 guess instead: `scsi` and `ata` are dropped so smartctl can auto-detect, because container scans
 routinely label ATA disks as SCSI and forcing `-d scsi` on them loses the ATA attributes.
 
-[example.collector.yaml](https://github.com/Starosdev/scrutiny/blob/master/example.collector.yaml)
+[example.collector.yaml](https://github.com/Staros-Labs/scrutiny/blob/master/example.collector.yaml)
 
 ### RAID Controllers (Megaraid/3ware/HBA/Adaptec/HPE/etc)
 Smartctl has support for a large number of [RAID controllers](https://www.smartmontools.org/wiki/Supported_RAID-Controllers), however this 
@@ -186,7 +186,7 @@ the identity and SMART attributes in the same response are complete, and the col
 them. See [Exit Codes](#exit-codes) below.
 
 > If you monitored one of these disks on a Scrutiny release older than the fix for
-> [#663](https://github.com/Starosdev/scrutiny/issues/663), it was registered without a model,
+> [#663](https://github.com/Staros-Labs/scrutiny/issues/663), it was registered without a model,
 > serial or WWN. Once the collector can read its identity the disk registers under a new
 > device id, and the old entry remains behind showing no data. Delete the stale entry; its
 > history is empty and cannot be merged usefully.
@@ -224,7 +224,7 @@ smartctl call for that device.
 
 > NOTE: `scsi` and `ata` used to be ignored when configured, because the collector could not
 > tell a configured type from a scanned one. As of the fix for
-> [#664](https://github.com/Starosdev/scrutiny/issues/664) they are honored. If you have either
+> [#664](https://github.com/Staros-Labs/scrutiny/issues/664) they are honored. If you have either
 > of them in your `collector.yaml` from an older release, where it was a no-op, it now takes
 > effect; remove the entry if you actually want auto-detection.
 
@@ -307,7 +307,7 @@ docker run -it --rm -p 8080:8080 -p 8086:8086 \
   --privileged \
   -v /dev:/dev \
   --name scrutiny \
-  ghcr.io/Starosdev/scrutiny:latest-omnibus
+  ghcr.io/Staros-Labs/scrutiny:latest-omnibus
 ```
 
 ## Scrutiny detects Failure but SMART Passed?
@@ -382,7 +382,7 @@ If this is effecting your drives, you'll need to do the following:
 
 1. Upgrade to v0.4.13+
 2. Reset your drive status using the SQLite script
-   in [#device-failed-but-smart--scrutiny-passed](https://github.com/Starosdev/scrutiny/blob/master/docs/TROUBLESHOOTING_DEVICE_COLLECTOR.md#device-failed-but-smart--scrutiny-passed)
+   in [#device-failed-but-smart--scrutiny-passed](https://github.com/Staros-Labs/scrutiny/blob/master/docs/TROUBLESHOOTING_DEVICE_COLLECTOR.md#device-failed-but-smart--scrutiny-passed)
 3. Wait for (or manually start) the collector.
 
 If you'd like to learn more about how the Seagate Ironwolf SMART attributes work under the hood, and how they differ
@@ -414,9 +414,9 @@ The host-id is passed from the collector to the web-api when SMART device data i
 the host-id:
 
 - using the collector config
-  file: [master/example.collector.yaml#L19-L22](https://github.com/Starosdev/scrutiny/blob/master/example.collector.yaml#L19-L22)
+  file: [master/example.collector.yaml#L19-L22](https://github.com/Staros-Labs/scrutiny/blob/master/example.collector.yaml#L19-L22)
 - using the `--host-id` collector CLI
-  argument: [master/collector/cmd/collector-metrics/collector-metrics.go#L180-L185](https://github.com/Starosdev/scrutiny/blob/master/collector/cmd/collector-metrics/collector-metrics.go#L180-L185)
+  argument: [master/collector/cmd/collector-metrics/collector-metrics.go#L180-L185](https://github.com/Staros-Labs/scrutiny/blob/master/collector/cmd/collector-metrics/collector-metrics.go#L180-L185)
 - using the `COLLECTOR_HOST_ID` environmental variable.
 
 See the [Hub/Spoke installation guide](./INSTALL_HUB_SPOKE.md) for more information.

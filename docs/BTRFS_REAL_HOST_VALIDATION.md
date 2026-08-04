@@ -17,7 +17,7 @@ What this session does provide:
 Run the capture script on the target Linux host:
 
 ```bash
-curl -L https://raw.githubusercontent.com/Starosdev/scrutiny/master/.github/scripts/capture-btrfs-host-state.sh -o capture-btrfs-host-state.sh
+curl -L https://raw.githubusercontent.com/Staros-Labs/scrutiny/master/.github/scripts/capture-btrfs-host-state.sh -o capture-btrfs-host-state.sh
 chmod +x capture-btrfs-host-state.sh
 sudo ./capture-btrfs-host-state.sh
 ```

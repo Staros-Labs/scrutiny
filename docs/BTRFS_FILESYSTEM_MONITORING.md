@@ -132,7 +132,7 @@ log:
 
 If you are not using Docker, you can run the Btrfs collector binary directly:
 
-1. Download the `scrutiny-collector-btrfs` binary from the [releases page](https://github.com/Starosdev/scrutiny/releases)
+1. Download the `scrutiny-collector-btrfs` binary from the [releases page](https://github.com/Staros-Labs/scrutiny/releases)
 2. Ensure the `btrfs` command is available on your system (`btrfs-progs` on Linux)
 3. Run the collector:
 

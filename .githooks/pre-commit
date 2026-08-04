@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# Local CI-aligned lint checks. Managed Linear and lease gates are inserted
+# above these checks by infra's wrapper sync.
+
+set -euo pipefail
+"$(git rev-parse --show-toplevel)/scripts/require-linear-session.sh" commit
+"$(git rev-parse --show-toplevel)/scripts/require-agent-lease.sh" deliver
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+if [ "${SKIP_LINT:-0}" = "1" ]; then
+    echo -e "${YELLOW}[pre-commit]${NC} SKIP_LINT=1 - lint skipped"
+    exit 0
+fi
+
+STAGED_GO="$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.go$' || true)"
+STAGED_FE="$(git diff --cached --name-only --diff-filter=ACM | grep -E '^webapp/frontend/.*\.(ts|html|json|scss|css)$' || true)"
+FAILED=0
+
+if [ -n "$STAGED_GO" ] && command -v gofmt >/dev/null 2>&1; then
+    echo -e "${BLUE}[pre-commit]${NC} gofmt..."
+    # shellcheck disable=SC2086
+    gofmt -w $STAGED_GO 2>/dev/null || true
+    # shellcheck disable=SC2086
+    git add $STAGED_GO 2>/dev/null || true
+    # shellcheck disable=SC2086
+    UNFMT="$(gofmt -l $STAGED_GO 2>/dev/null || true)"
+    if [ -n "$UNFMT" ]; then
+        echo -e "${RED}[pre-commit]${NC} gofmt issues remain in: $UNFMT"
+        FAILED=1
+    fi
+    if command -v go >/dev/null 2>&1; then
+        echo -e "${BLUE}[pre-commit]${NC} go vet (warn only)..."
+        if ! go vet ./... >/dev/null 2>&1; then
+            echo -e "${YELLOW}[pre-commit]${NC} WARN: go vet reported issues - run 'go vet ./...'"
+        fi
+    fi
+fi
+
+if [ -n "$STAGED_FE" ]; then
+    FE="webapp/frontend"
+    if [ -d "$FE/node_modules" ] && command -v npm >/dev/null 2>&1; then
+        echo -e "${BLUE}[pre-commit]${NC} prettier format..."
+        (cd "$FE" && npm run format >/dev/null 2>&1) || true
+        git add "$FE/src/" >/dev/null 2>&1 || true
+        echo -e "${BLUE}[pre-commit]${NC} ng lint..."
+        if ! (cd "$FE" && npm run lint >/dev/null 2>&1); then
+            echo -e "${RED}[pre-commit]${NC} ng lint errors: cd $FE && npm run lint"
+            FAILED=1
+        fi
+    else
+        echo -e "${YELLOW}[pre-commit]${NC} WARN: $FE/node_modules missing - skipping frontend lint"
+    fi
+fi
+
+if [ "$FAILED" -ne 0 ]; then
+    echo -e "${RED}[pre-commit]${NC} FAILED - fix reported lint errors"
+    exit 1
+fi
+echo -e "${GREEN}[pre-commit]${NC} lint checks passed"
+GIT_ONLY_ROLLOUT_OPTIONAL=1 "$(git rev-parse --show-toplevel)/scripts/require-git-only-rollout.sh" commit

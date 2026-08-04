@@ -4,7 +4,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 // -----------------------------------------------------------------------------------------------------
-// Workaround for Starosdev/scrutiny#672
+// Workaround for Staros-Labs/scrutiny#672
 //
 // When a mat-menu closes, MatMenuTrigger._destroyMenu() restores focus to the trigger by calling
 // focus() without any FocusOptions. The browser then scrolls the trigger back into view, so the page
