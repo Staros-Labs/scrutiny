@@ -26,6 +26,8 @@ jobs:
             echo "Add it to the component's imports array, see webapp/frontend/src/app/shared/menu-trigger-restore-focus.directive.ts"
             exit 1
           fi
+      - name: Guard SVG icon references
+        run: npm --prefix webapp/frontend run test:icons
       - name: Test Frontend
         run: |
           make binary-frontend-test-coverage
