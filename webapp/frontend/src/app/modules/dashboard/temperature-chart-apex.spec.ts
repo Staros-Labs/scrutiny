@@ -1,5 +1,6 @@
 import ApexCharts from 'apexcharts';
 import { alignTemperatureChartSeries } from './temperature-chart-series';
+import { createTemperatureChartTooltip } from './temperature-chart-tooltip';
 
 describe('dashboard temperature ApexCharts integration', () => {
     let chart: ApexCharts;
@@ -17,7 +18,7 @@ describe('dashboard temperature ApexCharts integration', () => {
         host.remove();
     });
 
-    it('shows aligned values and markers without moving the fixed tooltip', async () => {
+    it('keeps the fixed data panel stable across aligned missing readings', async () => {
         const timestamp = (hour: number) => new Date(Date.UTC(2026, 7, 1, hour));
         const series = alignTemperatureChartSeries([
             {
@@ -53,6 +54,7 @@ describe('dashboard temperature ApexCharts integration', () => {
             tooltip: {
                 shared: true,
                 intersect: false,
+                custom: createTemperatureChartTooltip(document, 'celsius', '24'),
                 fixed: {
                     enabled: true,
                     position: 'topLeft',
@@ -64,9 +66,15 @@ describe('dashboard temperature ApexCharts integration', () => {
         });
         await chart.render();
 
-        await hoverPoint(chart, host, 0, 0);
+        await hoverPoint(chart, host, 1, 2);
         const tooltip = host.querySelector<HTMLElement>('.apexcharts-tooltip');
         const initialPosition = { left: tooltip?.style.left, top: tooltip?.style.top };
+        const initialHeight = tooltip?.getBoundingClientRect().height;
+
+        await hoverPoint(chart, host, 0, 1);
+        expect(visibleTooltipRows(host).length).toBe(series.length);
+        expect(visibleTooltipRows(host)[1].textContent).toMatch(/Spike drive:\s*--/);
+        expect(tooltip?.getBoundingClientRect().height).toBe(initialHeight);
 
         await hoverPoint(chart, host, 1, 2);
 
@@ -98,4 +106,8 @@ async function hoverPoint(chart: ApexCharts, host: HTMLElement, seriesIndex: num
 
 function dynamicMarkerPaths(host: HTMLElement): SVGPathElement[] {
     return Array.from(host.querySelectorAll<SVGPathElement>('.apexcharts-series-markers-wrap > .apexcharts-series-markers:last-child .apexcharts-marker'));
+}
+
+function visibleTooltipRows(host: HTMLElement): HTMLElement[] {
+    return Array.from(host.querySelectorAll<HTMLElement>('.apexcharts-tooltip-series-group.apexcharts-active')).filter((row) => row.style.display !== 'none');
 }

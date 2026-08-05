@@ -11,7 +11,6 @@ import { Router, RouterLink } from '@angular/router';
 import { TemperaturePipe } from 'app/shared/temperature.pipe';
 import { DeviceTitlePipe } from 'app/shared/device-title.pipe';
 import { DeviceSummaryModel } from 'app/core/models/device-summary-model';
-import { apexShortDateTime } from 'app/shared/time-format.utils';
 import { MDADMService } from 'app/modules/mdadm/mdadm.service';
 import { MDADMArrayModel } from 'app/core/models/mdadm-array-model';
 import { FilesystemCapacityModel, FilesystemHostStatusModel } from 'app/core/models/filesystem-summary-model';
@@ -34,6 +33,7 @@ import { SmartTemperatureModel } from 'app/core/models/measurements/smart-temper
 import { MatInput } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { alignTemperatureChartSeries, TemperatureChartSeries } from './temperature-chart-series';
+import { createTemperatureChartTooltip } from './temperature-chart-tooltip';
 
 const DASHBOARD_SHELL_WIDTHS: Record<DashboardColumns, string> = {
     2: '1440px',
@@ -351,17 +351,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
                     offsetX: 12,
                     offsetY: 12,
                 },
-                x: {
-                    format: apexShortDateTime(this.config.time_format, true),
-                },
-                y: {
-                    formatter: (value) => {
-                        if (value === null || value === undefined) {
-                            return null;
-                        }
-                        return TemperaturePipe.formatTemperature(value, this.config.temperature_unit, true) as string;
-                    },
-                },
+                custom: createTemperatureChartTooltip(this._document, this.config.temperature_unit, this.config.time_format),
             },
             xaxis: {
                 type: 'datetime',

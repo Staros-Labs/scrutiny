@@ -120,6 +120,13 @@ Frontend code should treat application config as available immediately from defa
 
 This avoids startup races where layout or theme code reads `config.layout` before the initial settings request completes.
 
+## Frontend temperature chart tooltip rule
+
+- **Problem:** ApexCharts hides shared-tooltip rows whose aligned value is `null`, even when `tooltip.hideEmptySeries` is `false`. The fixed data panel then changes height while the pointer moves between timestamps.
+- **Approach:** Keep timestamp-aligned series padded with `null`, then render one custom tooltip row per visible series and show `--` for a missing reading.
+- **Dead ends:** Do not carry values forward, widen timestamp matching, or rely on `hideEmptySeries`. Those options either change recorded data or still hide `null` rows.
+- **Rule:** Any shared tooltip over null-padded aligned series must keep its visible-series row set stable across adjacent timestamps.
+
 # Modifying both Scrutiny Backend and Frontend Applications
 If you're developing a feature that requires changes to the backend and the frontend, or a frontend feature that requires real data,
 you'll need to follow the steps below:
