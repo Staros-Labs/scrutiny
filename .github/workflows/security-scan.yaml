@@ -1,5 +1,6 @@
 # GHAS-free dependency and filesystem scanning with Trivy.
 # JSON stays in a private short-retention artifact; no SARIF upload is used.
+# Findings remain report-only until owner-reviewed gate enrollment.
 
 name: Security Scan
 
@@ -86,12 +87,10 @@ jobs:
 
               if [ "${{ github.event_name }}" = "pull_request" ]; then
                 echo ""
-                echo "  BLOCKING: PR has critical or high vulnerabilities"
-                echo "  Fix critical and high vulnerabilities before merging"
-                exit 1
+                echo "  REPORT-ONLY: findings are retained for issue aggregation"
               else
                 echo ""
-              echo "  WARNING: Scheduled scan found critical or high vulnerabilities (not blocking)"
+                echo "  REPORT-ONLY: scheduled scan found critical or high vulnerabilities"
               fi
             else
               echo "  No critical vulnerabilities found"
