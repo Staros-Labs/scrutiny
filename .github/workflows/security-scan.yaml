@@ -18,22 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
-      - name: Run Trivy vulnerability scanner (SARIF)
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
-        with:
-          scan-type: 'fs'
-          path: '.'
-          format: 'sarif'
-          output: 'trivy-repo-results.sarif'
-          severity: 'CRITICAL,HIGH'
-          exit-code: '0'
-        continue-on-error: true
 
       - name: Run Trivy vulnerability scanner (JSON)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
@@ -44,17 +32,14 @@ jobs:
           output: 'trivy-summary.json'
           severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
           exit-code: '0'
-        continue-on-error: true
 
       - name: Upload Trivy scan results
         uses: actions/upload-artifact@v7
         with:
           name: trivy-scan-results
-          path: |
-            trivy-*.sarif
-            trivy-*.json
-          retention-days: 30
-          if-no-files-found: warn
+          path: trivy-summary.json
+          retention-days: 7
+          if-no-files-found: error
 
       - name: Display vulnerability summary
         if: always()
