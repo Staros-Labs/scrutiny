@@ -36,6 +36,10 @@ All notable changes to Scrutiny will be documented in this file.
 
 ## Unreleased
 
+### Features
+
+* **web:** add monitoring-only ZFS pool management mode ([#691](https://github.com/Staros-Labs/scrutiny/issues/691)) ([c681369](https://github.com/Staros-Labs/scrutiny/commit/c681369340f482219b1eb497112057ffa0b3f421))
+
 ### Bug Fixes
 
 * **smart:** skip generic HDD observed-threshold scoring for vendor-specific ATA SSD attributes and add a Crucial RealSSD compatibility profile ([#587](https://github.com/Starosdev/scrutiny/issues/587))
