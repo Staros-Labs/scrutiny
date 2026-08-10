@@ -652,7 +652,7 @@ curl -X POST http://localhost:8080/api/health/mqtt-sync
 
 ```bash
 # Metrics are enabled by default; verify the endpoint returns data
-curl -s http://localhost:8080/api/metrics | head -20
+curl -s -H "Authorization: Bearer ${METRICS_TOKEN}" \
 
 # With a metrics token configured:
 curl -s -H "Authorization: Bearer your-metrics-token" \
@@ -799,7 +799,7 @@ If tests fail with InfluxDB connection errors:
 
 ```bash
 # Verify InfluxDB is running and healthy
-curl -s http://localhost:8086/health | jq .
+curl -s -H "Authorization: Token ${INFLUXDB_TOKEN}" \
 
 # Check it was initialized with the correct credentials
 curl -s -H "Authorization: Token my-super-secret-auth-token" \
