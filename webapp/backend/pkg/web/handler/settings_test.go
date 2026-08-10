@@ -109,3 +109,19 @@ func TestSaveSettingsRejectsUnsupportedDashboardPageSize(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, response.Code)
 	require.Contains(t, response.Body.String(), "dashboard_page_size")
 }
+
+func TestSaveSettingsRejectsUnsupportedDashboardHostPageSize(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	t.Cleanup(mockCtrl.Finish)
+	mockRepo := mock_database.NewMockDeviceRepo(mockCtrl)
+	router := setupSettingsRouter(t, mockRepo, true)
+
+	body := strings.NewReader(`{"dashboard_host_page_size": 100}`)
+	response := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodPost, "/api/settings", body)
+	request.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(response, request)
+
+	require.Equal(t, http.StatusBadRequest, response.Code)
+	require.Contains(t, response.Body.String(), "dashboard_host_page_size")
+}

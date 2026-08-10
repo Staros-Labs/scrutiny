@@ -2,6 +2,8 @@
 
 Scrutiny supports Linux software RAID arrays managed by `mdadm`.
 
+MDADM arrays appear on the dedicated MDADM page. The SMART dashboard contains SMART device cards only, so MDADM arrays do not affect SMART host search or host-count pagination.
+
 This guide covers:
 
 - omnibus deployments where the collector runs inside the main Scrutiny container
@@ -105,7 +107,7 @@ docker exec -it scrutiny /opt/scrutiny/bin/scrutiny-collector-mdadm run --debug
 curl -s http://localhost:8080/api/mdadm/summary | jq .
 ```
 
-4. Open the MDADM page in the UI and verify the arrays show a state and size, not just static metadata.
+4. Open the dedicated MDADM page in the UI and verify the arrays show a state and size, not just static metadata.
 
 Upgrade note:
 

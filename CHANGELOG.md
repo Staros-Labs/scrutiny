@@ -36,8 +36,13 @@ All notable changes to Scrutiny will be documented in this file.
 
 ## Unreleased
 
+### Features
+
+* **dashboard:** add global host search and host-count pagination that keeps each host's SMART devices together ([#674](https://github.com/Starosdev/scrutiny/issues/674))
+
 ### Bug Fixes
 
+* **dashboard:** retain the current page after device archive actions and remove MDADM cards from the SMART dashboard ([#674](https://github.com/Starosdev/scrutiny/issues/674))
 * **smart:** skip generic HDD observed-threshold scoring for vendor-specific ATA SSD attributes and add a Crucial RealSSD compatibility profile ([#587](https://github.com/Starosdev/scrutiny/issues/587))
 
 ## [1.65.0](https://github.com/Starosdev/scrutiny/compare/v1.64.0...v1.65.0) (2026-06-29)

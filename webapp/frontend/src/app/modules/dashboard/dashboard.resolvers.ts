@@ -21,6 +21,6 @@ export class DashboardResolver {
      * @param state
      */
     resolve(_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot): Observable<DeviceSummaryPage> {
-        return this._dashboardService.getSummaryPage({ page: 1 });
+        return this._dashboardService.getSummaryPage({ page: 1, groupBy: 'host' });
     }
 }
