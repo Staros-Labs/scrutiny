@@ -655,7 +655,7 @@ curl -X POST http://localhost:8080/api/health/mqtt-sync
 curl -s -H "Authorization: Bearer ${METRICS_TOKEN}" \
 
 # With a metrics token configured:
-curl -s -H "Authorization: Bearer your-metrics-token" \
+curl -s -H "Authorization: Bearer ${METRICS_TOKEN}" \
   http://localhost:8080/api/metrics
 ```
 
@@ -802,7 +802,7 @@ If tests fail with InfluxDB connection errors:
 curl -s -H "Authorization: Token ${INFLUXDB_TOKEN}" \
 
 # Check it was initialized with the correct credentials
-curl -s -H "Authorization: Token my-super-secret-auth-token" \
+curl -s -H "Authorization: Token ${INFLUXDB_TOKEN}" \
   http://localhost:8086/api/v2/buckets | jq '.buckets[].name'
 ```
 
