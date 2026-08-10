@@ -26,6 +26,10 @@ We use a Gitflow-style workflow:
 4. Update `README.md` when your change affects the top-level product surface, feature set, supported deployment paths, or published image matrix
 5. Submit a PR to `develop` (or `master` for hotfixes)
 
+### PR Description Automation
+
+`.github/workflows/auto-pr-description.yaml` fills an empty PR body when the PR is opened. It preserves author-written descriptions. Keep `platisd/openai-pr-description` pinned to an approved release commit covered by the organization Actions allowlist. After changing the action or allowlist, test an empty-body PR; a PR with a body skips the job before action resolution and cannot prove the reference works.
+
 ### Loop Pilot Workflows
 
 This repo also has read-only and draft-only loop pilot workflows on `master`.
