@@ -1,0 +1,137 @@
+name: Gitleaks Security
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      scan_history:
+        description: Scan all reachable Git history instead of the checked-out tree.
+        required: false
+        type: boolean
+        default: false
+      test_fixture:
+        description: Run disposable synthetic credential detection test.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    name: Gitleaks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      GITLEAKS_VERSION: 8.28.0
+      GITLEAKS_SHA256: a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.scan_history)) && 0 || 1 }}
+
+      - name: Prepare report
+        run: printf '%s\n' '{"scanner":"gitleaks","status":"not-run"}' > "$RUNNER_TEMP/gitleaks.redacted.json"
+
+      - name: Create disposable test fixture
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.test_fixture }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/gitleaks-fixture"
+          printf '%s\n' 'DISPOSABLE_GITLEAKS_FIXTURE_SYNTHETIC' \
+            > "$RUNNER_TEMP/gitleaks-fixture/disposable.txt"
+          cat > "$RUNNER_TEMP/gitleaks-fixture/config.toml" <<'EOF'
+          title = "Disposable Gitleaks fixture test"
+
+          [[rules]]
+          id = "disposable-gitleaks-fixture"
+          description = "Synthetic marker used only to validate Gitleaks enforcement."
+          regex = '''DISPOSABLE_GITLEAKS_FIXTURE_[A-Z]+'''
+          secretGroup = 0
+          keywords = ["DISPOSABLE_GITLEAKS_FIXTURE_"]
+          EOF
+
+      - name: Install Gitleaks
+        id: install
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/gitleaks.tar.gz"
+          curl --fail --silent --show-error --location \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            --output "$archive"
+          printf '%s  %s\n' "$GITLEAKS_SHA256" "$archive" | sha256sum --check --status
+          tar -xzf "$archive" -C "$RUNNER_TEMP" gitleaks
+          chmod 0755 "$RUNNER_TEMP/gitleaks"
+
+      - name: Scan repository
+        id: scan
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name == 'workflow_dispatch' && inputs.test_fixture }}" == "true" ]]; then
+            "$RUNNER_TEMP/gitleaks" dir "$RUNNER_TEMP/gitleaks-fixture" \
+              --config "$RUNNER_TEMP/gitleaks-fixture/config.toml" \
+              --no-banner \
+              --report-format json \
+              --report-path "$RUNNER_TEMP/gitleaks.json" \
+              --exit-code 1
+          elif [[ "${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.scan_history) }}" == "true" ]]; then
+            "$RUNNER_TEMP/gitleaks" git . \
+              --log-opts="--all" \
+              --no-banner \
+              --report-format json \
+              --report-path "$RUNNER_TEMP/gitleaks.json" \
+              --exit-code 1
+          else
+            "$RUNNER_TEMP/gitleaks" dir . \
+              --no-banner \
+              --report-format json \
+              --report-path "$RUNNER_TEMP/gitleaks.json" \
+              --exit-code 1
+          fi
+
+      - name: Redact report
+        if: always()
+        run: |
+          set -euo pipefail
+          if [[ -s "$RUNNER_TEMP/gitleaks.json" ]]; then
+            jq '
+              walk(
+                if type == "object" then
+                  with_entries(
+                    if (.key | ascii_downcase | test("secret|match|password|token|authorization|private[_-]?key"))
+                    then .value = "[REDACTED]"
+                    else .
+                    end
+                  )
+                else .
+                end
+              )
+            ' "$RUNNER_TEMP/gitleaks.json" > "$RUNNER_TEMP/gitleaks.redacted.json"
+          fi
+
+      - name: Upload private report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: security-gitleaks-report
+          path: ${{ runner.temp }}/gitleaks.redacted.json
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Enforce scanner result
+        if: ${{ steps.install.outcome != 'success' || steps.scan.outcome != 'success' }}
+        run: exit 1
