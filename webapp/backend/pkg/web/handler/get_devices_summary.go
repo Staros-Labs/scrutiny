@@ -62,9 +62,16 @@ func getPaginatedDevicesSummary(c *gin.Context, logger *logrus.Entry, deviceRepo
 
 func parseSummaryPageOptions(c *gin.Context) (models.DeviceSummaryPageOptions, error) {
 	options := models.DeviceSummaryPageOptions{
-		Archived: false,
-		Sort:     c.Query("sort"),
-		Display:  c.Query("display"),
+		Archived:   false,
+		Sort:       c.Query("sort"),
+		Display:    c.Query("display"),
+		HostSearch: c.Query("host"),
+	}
+	if groupBy := c.Query("group_by"); groupBy != "" {
+		if groupBy != "host" {
+			return options, fmt.Errorf("group_by must be host")
+		}
+		options.GroupByHost = true
 	}
 
 	page, err := strconv.Atoi(c.Query("page"))
@@ -75,8 +82,11 @@ func parseSummaryPageOptions(c *gin.Context) (models.DeviceSummaryPageOptions, e
 
 	if pageSizeValue, exists := c.GetQuery("page_size"); exists {
 		pageSize, parseErr := strconv.Atoi(pageSizeValue)
-		if parseErr != nil || !validSummaryPageSize(pageSize) {
+		if parseErr != nil || (!options.GroupByHost && !validSummaryPageSize(pageSize)) {
 			return options, fmt.Errorf("page_size must be one of 25, 50, 100, or 250")
+		}
+		if options.GroupByHost && !validSummaryHostPageSize(pageSize) {
+			return options, fmt.Errorf("page_size must be one of 5, 10, 25, or 50 when group_by=host")
 		}
 		options.PageSize = pageSize
 	}
@@ -101,6 +111,10 @@ func parseSummaryPageOptions(c *gin.Context) (models.DeviceSummaryPageOptions, e
 
 func validSummaryPageSize(pageSize int) bool {
 	return pageSize == 25 || pageSize == 50 || pageSize == 100 || pageSize == 250
+}
+
+func validSummaryHostPageSize(pageSize int) bool {
+	return pageSize == 5 || pageSize == 10 || pageSize == 25 || pageSize == 50
 }
 
 func validSummarySort(sort string) bool {

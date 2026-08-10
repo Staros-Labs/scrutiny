@@ -51,11 +51,13 @@ func TestGetDevicesSummaryReturnsPaginatedResponse(t *testing.T) {
 	t.Cleanup(mockCtrl.Finish)
 	repo := mock_database.NewMockDeviceRepo(mockCtrl)
 	options := models.DeviceSummaryPageOptions{
-		Page:     2,
-		PageSize: 50,
-		Archived: true,
-		Sort:     "title_asc",
-		Display:  "label",
+		Page:        2,
+		PageSize:    10,
+		Archived:    true,
+		Sort:        "title_asc",
+		Display:     "label",
+		HostSearch:  "alpha",
+		GroupByHost: true,
 	}
 	page := &models.DeviceSummaryPage{
 		Summary: map[string]*models.DeviceSummary{
@@ -63,7 +65,7 @@ func TestGetDevicesSummaryReturnsPaginatedResponse(t *testing.T) {
 		},
 		Pagination: models.PaginationMetadata{
 			Page:           2,
-			PageSize:       50,
+			PageSize:       10,
 			TotalItems:     75,
 			TotalPages:     2,
 			AttentionCount: 3,
@@ -72,7 +74,7 @@ func TestGetDevicesSummaryReturnsPaginatedResponse(t *testing.T) {
 	repo.EXPECT().GetSummaryPage(gomock.Any(), options).Return(page, nil)
 
 	response := httptest.NewRecorder()
-	request, _ := http.NewRequest(http.MethodGet, "/api/summary?page=2&page_size=50&archived=true&sort=title_asc&display=label", nil)
+	request, _ := http.NewRequest(http.MethodGet, "/api/summary?page=2&page_size=10&group_by=host&archived=true&sort=title_asc&display=label&host=alpha", nil)
 	setupSummaryRouter(t, repo).ServeHTTP(response, request)
 
 	require.Equal(t, http.StatusOK, response.Code)
@@ -89,6 +91,8 @@ func TestGetDevicesSummaryRejectsInvalidPagination(t *testing.T) {
 		"/api/summary?page=0",
 		"/api/summary?page=one",
 		"/api/summary?page=1&page_size=10",
+		"/api/summary?page=1&page_size=100&group_by=host",
+		"/api/summary?page=1&group_by=unknown",
 		"/api/summary?page=1&archived=maybe",
 		"/api/summary?page=1&sort=unknown",
 		"/api/summary?page=1&display=unknown",

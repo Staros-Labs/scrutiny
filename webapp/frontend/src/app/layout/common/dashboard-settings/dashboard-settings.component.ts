@@ -4,7 +4,7 @@ import {
     AppConfig,
     DashboardColumns,
     DashboardDensity,
-    DashboardPageSize,
+    DashboardHostPageSize,
     AttributeOverride,
     DashboardDisplay,
     DashboardSort,
@@ -92,7 +92,7 @@ export class DashboardSettingsComponent implements OnInit {
     dashboardSort: DashboardSort;
     dashboardColumns: DashboardColumns;
     dashboardDensity: DashboardDensity;
-    dashboardPageSize: DashboardPageSize;
+    dashboardHostPageSize: DashboardHostPageSize;
     temperatureUnit: string;
     fileSizeSIUnits: boolean;
     poweredOnHoursUnit: string;
@@ -216,7 +216,7 @@ export class DashboardSettingsComponent implements OnInit {
             this.dashboardSort = config.dashboard_sort;
             this.dashboardColumns = config.dashboard_columns;
             this.dashboardDensity = config.dashboard_density;
-            this.dashboardPageSize = config.dashboard_page_size;
+            this.dashboardHostPageSize = config.dashboard_host_page_size ?? 10;
             this.temperatureUnit = config.temperature_unit;
             this.fileSizeSIUnits = config.file_size_si_units;
             this.poweredOnHoursUnit = config.powered_on_hours_unit;
@@ -542,7 +542,7 @@ export class DashboardSettingsComponent implements OnInit {
             dashboard_sort: this.dashboardSort as DashboardSort,
             dashboard_columns: this.dashboardColumns as DashboardColumns,
             dashboard_density: this.dashboardDensity as DashboardDensity,
-            dashboard_page_size: this.dashboardPageSize as DashboardPageSize,
+            dashboard_host_page_size: this.dashboardHostPageSize as DashboardHostPageSize,
             temperature_unit: this.temperatureUnit as TemperatureUnit,
             time_format: this.timeFormat as TimeFormat,
             file_size_si_units: this.fileSizeSIUnits,

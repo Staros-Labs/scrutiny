@@ -8,15 +8,17 @@ import { DeviceSummaryModel } from 'app/core/models/device-summary-model';
 import { SmartTemperatureModel } from 'app/core/models/measurements/smart-temperature-model';
 import { DeviceSummaryTempResponseWrapper, TemperatureDeviceOption, TemperatureDeviceOptionsResponseWrapper } from 'app/core/models/device-summary-temp-response-wrapper';
 import { FilesystemSummaryResponseWrapper, FilesystemCapacityModel, FilesystemHostStatusModel } from 'app/core/models/filesystem-summary-model';
-import { DashboardDisplay, DashboardPageSize, DashboardSort } from 'app/core/config/app.config';
+import { DashboardDisplay, DashboardHostPageSize, DashboardPageSize, DashboardSort } from 'app/core/config/app.config';
 import { TemperatureSelection } from 'app/modules/dashboard/temperature-selection';
 
 export interface SummaryPageRequest {
     page: number;
-    pageSize?: DashboardPageSize;
+    pageSize?: DashboardPageSize | DashboardHostPageSize;
+    groupBy?: 'host';
     archived?: boolean;
     sort?: DashboardSort;
     display?: DashboardDisplay;
+    hostSearch?: string;
 }
 
 @Injectable({
@@ -82,11 +84,17 @@ export class DashboardService {
         if (request.pageSize) {
             params['page_size'] = request.pageSize.toString();
         }
+        if (request.groupBy) {
+            params['group_by'] = request.groupBy;
+        }
         if (request.sort) {
             params['sort'] = request.sort;
         }
         if (request.display) {
             params['display'] = request.display;
+        }
+        if (request.hostSearch) {
+            params['host'] = request.hostSearch;
         }
 
         return this._httpClient.get<DeviceSummaryResponseWrapper>(getBasePath() + '/api/summary', { params }).pipe(

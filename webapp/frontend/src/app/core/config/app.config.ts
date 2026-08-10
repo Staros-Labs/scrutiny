@@ -11,6 +11,7 @@ export type DashboardColumns = 2 | 3 | 4 | 5;
 export type DashboardDensity = 'comfortable' | 'compact';
 
 export type DashboardPageSize = 25 | 50 | 100 | 250;
+export type DashboardHostPageSize = 5 | 10 | 25 | 50;
 
 export type DashboardSort =
     | 'status'
@@ -105,6 +106,7 @@ export interface AppConfig {
     dashboard_columns?: DashboardColumns;
     dashboard_density?: DashboardDensity;
     dashboard_page_size?: DashboardPageSize;
+    dashboard_host_page_size?: DashboardHostPageSize;
 
     temperature_unit?: TemperatureUnit;
 
@@ -193,6 +195,7 @@ export const appConfig: AppConfig = {
     dashboard_columns: 2,
     dashboard_density: 'comfortable',
     dashboard_page_size: 25,
+    dashboard_host_page_size: 10,
 
     temperature_unit: 'celsius',
     file_size_si_units: false,
