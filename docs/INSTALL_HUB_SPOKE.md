@@ -92,6 +92,8 @@ services:
       - SCRUTINY_WEB_INFLUXDB_TOKEN=your-very-secret-token
       - SCRUTINY_WEB_INFLUXDB_ORG=homelab
       - SCRUTINY_WEB_INFLUXDB_BUCKET=scrutiny
+      # Optional: prevent dashboard users from changing ZFS pool records
+      # - SCRUTINY_WEB_ZFS_ALLOW_POOL_MODIFICATIONS=false
       # Optional but highly recommended to notify you in case of a problem
       # Existing Shoutrrr targets keep their current syntax. Apprise targets
       # must be explicit and prefixed with apprise+.
@@ -106,6 +108,11 @@ services:
 
 A freshly initialized Scrutiny instance can be accessed on port 8080, eg. `192.168.0.100:8080`. The interface will be
 empty because no metrics have been collected yet.
+
+For shared ZFS dashboards, set `SCRUTINY_WEB_ZFS_ALLOW_POOL_MODIFICATIONS=false` on the web service and restart it.
+Scrutiny then hides pool archive, mute, label, and delete controls and returns `403` for those API mutations.
+Collector registration, metric uploads, read endpoints, and the **Archived** filter remain available. See
+[ZFS Pool Monitoring](ZFS_POOL_MONITORING.md#monitoring-only-pool-management) for YAML configuration and full behavior.
 
 ## Setting up a Spoke ***without*** Docker
 

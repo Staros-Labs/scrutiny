@@ -133,7 +133,7 @@ These S.M.A.R.T hard drive self-tests can help you detect and replace failing ha
 - Configurable Alerting/Notifications via Webhooks
 
 ### Extended Features (This Fork)
-- **ZFS Pool Monitoring** - Track pool health, capacity, and status
+- **ZFS Pool Monitoring** - Track pool health, capacity, and status, with an optional monitoring-only mode that blocks pool record changes
 - **Prometheus Metrics Endpoint** - `/api/metrics` for Grafana integration
 - **Device Archiving** - Archive old drives to declutter the dashboard
 - **Per-Device Notification Muting** - Control which drives trigger alerts

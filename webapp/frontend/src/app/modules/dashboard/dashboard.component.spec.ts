@@ -38,16 +38,16 @@ describe('DashboardComponent temperature chart', () => {
             temperatureSelection,
         });
         dashboardService.getTemperatureDeviceOptions.and.returnValue(
-            of([
-                {
-                    device_id: 'drive-1',
+            of(
+                Array.from({ length: 19 }, (_, index) => ({
+                    device_id: `drive-${index + 1}`,
                     host_id: 'host-1',
                     label: '',
-                    device_name: 'sda',
+                    device_name: `sd${String.fromCharCode(97 + index)}`,
                     model_name: 'Test Drive',
-                    serial_number: 'serial-1',
-                },
-            ])
+                    serial_number: `serial-${index + 1}`,
+                }))
+            )
         );
         dashboardService.getSummaryTempData.and.returnValue(
             of({
@@ -88,12 +88,18 @@ describe('DashboardComponent temperature chart', () => {
 
         fixture = TestBed.createComponent(DashboardComponent);
         component = fixture.componentInstance;
-        component.ngOnInit();
+        fixture.detectChanges();
     });
 
     afterEach(() => {
-        component.ngOnDestroy();
         fixture.destroy();
+    });
+
+    it('shows selected drives out of available drives', () => {
+        const driveFilterButton = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('button')).find((button) => button.textContent?.includes('Drives ('));
+
+        expect(driveFilterButton?.textContent).toContain('Drives (0/19)');
+        expect(driveFilterButton?.textContent).not.toContain(`/${component.temperatureSelection.maxSelected})`);
     });
 
     it('binds loaded temperature data before the lazy chart instance exists', () => {

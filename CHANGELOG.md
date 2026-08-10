@@ -39,6 +39,7 @@ All notable changes to Scrutiny will be documented in this file.
 ### Features
 
 * **dashboard:** add global host search and host-count pagination that keeps each host's SMART devices together ([#674](https://github.com/Starosdev/scrutiny/issues/674))
+* **web:** add monitoring-only ZFS pool management mode ([#691](https://github.com/Staros-Labs/scrutiny/issues/691)) ([c681369](https://github.com/Staros-Labs/scrutiny/commit/c681369340f482219b1eb497112057ffa0b3f421))
 
 ### Bug Fixes
 
