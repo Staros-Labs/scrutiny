@@ -1,7 +1,7 @@
 services:
   scrutiny:
     container_name: scrutiny-dev
-    image: ghcr.io/starosdev/scrutiny:develop-omnibus
+    image: ghcr.io/staros-labs/scrutiny:develop-omnibus
     cap_add:
       - SYS_RAWIO
       - SYS_ADMIN  # Required for NVMe devices and MDADM
