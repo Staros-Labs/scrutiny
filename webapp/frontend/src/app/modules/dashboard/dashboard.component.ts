@@ -1,19 +1,16 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild, ViewEncapsulation, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ApexOptions, ChartComponent } from 'ng-apexcharts';
 import { DashboardService } from 'app/modules/dashboard/dashboard.service';
 import { MatDialog as MatDialog } from '@angular/material/dialog';
 import { DashboardSettingsComponent } from 'app/layout/common/dashboard-settings/dashboard-settings.component';
-import { AppConfig, DashboardColumns, DashboardDensity, DashboardPageSize } from 'app/core/config/app.config';
+import { AppConfig, DashboardColumns, DashboardDensity, DashboardHostPageSize } from 'app/core/config/app.config';
 import { ScrutinyConfigService } from 'app/core/config/scrutiny-config.service';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { TemperaturePipe } from 'app/shared/temperature.pipe';
 import { DeviceTitlePipe } from 'app/shared/device-title.pipe';
 import { DeviceSummaryModel } from 'app/core/models/device-summary-model';
-import { apexShortDateTime } from 'app/shared/time-format.utils';
-import { MDADMService } from 'app/modules/mdadm/mdadm.service';
-import { MDADMArrayModel } from 'app/core/models/mdadm-array-model';
 import { FilesystemCapacityModel, FilesystemHostStatusModel } from 'app/core/models/filesystem-summary-model';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -32,7 +29,10 @@ import { DeviceSummaryPagination } from 'app/core/models/device-summary-response
 import { TemperatureDeviceOption } from 'app/core/models/device-summary-temp-response-wrapper';
 import { SmartTemperatureModel } from 'app/core/models/measurements/smart-temperature-model';
 import { MatInput } from '@angular/material/input';
+import { MatFormField, MatLabel, MatPrefix } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
+import { alignTemperatureChartSeries, TemperatureChartSeries } from './temperature-chart-series';
+import { createTemperatureChartTooltip } from './temperature-chart-tooltip';
 
 const DASHBOARD_SHELL_WIDTHS: Record<DashboardColumns, string> = {
     2: '1440px',
@@ -58,7 +58,6 @@ const DASHBOARD_SHELL_WIDTHS: Record<DashboardColumns, string> = {
         MatMenu,
         MatMenuItem,
         DashboardDeviceComponent,
-        RouterLink,
         NgClass,
         MatCheckbox,
         MatDivider,
@@ -71,12 +70,14 @@ const DASHBOARD_SHELL_WIDTHS: Record<DashboardColumns, string> = {
         DeviceSortPipe,
         MatPaginator,
         MatInput,
+        MatFormField,
+        MatLabel,
+        MatPrefix,
         FormsModule,
     ],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
     private readonly _dashboardService = inject(DashboardService);
-    private readonly _mdadmService = inject(MDADMService);
     private readonly _configService = inject(ScrutinyConfigService);
     private readonly _changeDetectorRef = inject(ChangeDetectorRef);
     private readonly _document = inject(DOCUMENT);
@@ -94,24 +95,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
     temperatureDeviceSearch = '';
     temperatureHistory: { [deviceID: string]: SmartTemperatureModel[] } = {};
     readonly temperatureSelection = this._dashboardService.temperatureSelection;
-    mdadmArrays: MDADMArrayModel[] = [];
+    hostSearch = '';
+    appliedHostSearch = '';
     isTriggering: boolean = false;
     countdown: number = 0;
     pagination: DeviceSummaryPagination = {
         page: 1,
-        page_size: 25,
+        page_size: 10,
         total_items: 0,
         total_pages: 0,
         attention_count: 0,
     };
-    readonly pageSizeOptions: DashboardPageSize[] = [25, 50, 100, 250];
+    readonly pageSizeOptions: DashboardHostPageSize[] = [5, 10, 25, 50];
 
     // Private
     private readonly _unsubscribeAll: Subject<void>;
     private readonly systemPrefersDark: boolean;
     private temperatureRequestID = 0;
-    @ViewChild('tempChart', { static: false }) tempChart: ChartComponent;
-
     /**
      * Constructor
      *
@@ -184,13 +184,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 this._changeDetectorRef.markForCheck();
             });
 
-        // Get MDADM data
-        this._mdadmService
-            .getSummaryData()
-            .pipe(takeUntil(this._unsubscribeAll))
-            .subscribe((arrays) => {
-                this.mdadmArrays = arrays;
-            });
         this._dashboardService
             .getFilesystemSummaryData()
             .pipe(takeUntil(this._unsubscribeAll))
@@ -233,8 +226,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         return DeviceTitlePipe.deviceDashboardTitle(deviceSummary.device);
     }
 
-    private _deviceDataTemperatureSeries(): any[] {
-        const deviceTemperatureSeries = [];
+    private _deviceDataTemperatureSeries(): TemperatureChartSeries[] {
+        const deviceTemperatureSeries: TemperatureChartSeries[] = [];
 
         for (const deviceID of this.temperatureSelection.ids) {
             const tempHistory = this.temperatureHistory[deviceID];
@@ -244,7 +237,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
             const deviceName = this.temperatureDeviceTitle(this.temperatureDevices.find((device) => device.device_id === deviceID));
 
-            const deviceSeriesMetadata = {
+            const deviceSeriesMetadata: TemperatureChartSeries = {
                 name: deviceName,
                 data: [],
             };
@@ -267,19 +260,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             }
             deviceTemperatureSeries.push(deviceSeriesMetadata);
         }
-        return deviceTemperatureSeries;
-    }
-
-    private _patchSharedTooltip(chartContext: any): void {
-        try {
-            const tooltip = chartContext.w.globals.tooltip;
-            if (tooltip?.tooltipUtil) {
-                tooltip.tooltipUtil.isInitialSeriesSameLen = () => true;
-                tooltip.tooltipUtil.isXoverlap = () => true;
-            }
-        } catch {
-            // Silently fail if ApexCharts internals change
-        }
+        return alignTemperatureChartSeries(deviceTemperatureSeries);
     }
 
     private determineTheme(config: AppConfig): string {
@@ -323,14 +304,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 toolbar: {
                     show: false,
                 },
-                events: {
-                    mounted: (chartContext) => {
-                        this._patchSharedTooltip(chartContext);
-                    },
-                    updated: (chartContext) => {
-                        this._patchSharedTooltip(chartContext);
-                    },
-                },
             },
             colors: ['#667eea', '#9066ea', '#66c0ea', '#66ead2', '#d266ea', '#66ea90'],
             fill: {
@@ -366,17 +339,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 theme: 'dark',
                 shared: true,
                 intersect: false,
-                x: {
-                    format: apexShortDateTime(this.config.time_format, true),
+                fixed: {
+                    enabled: true,
+                    position: 'topLeft',
+                    offsetX: 12,
+                    offsetY: 12,
                 },
-                y: {
-                    formatter: (value) => {
-                        if (value === null || value === undefined) {
-                            return null;
-                        }
-                        return TemperaturePipe.formatTemperature(value, this.config.temperature_unit, true) as string;
-                    },
-                },
+                custom: createTemperatureChartTooltip(this._document, this.config.temperature_unit, this.config.time_format),
             },
             xaxis: {
                 type: 'datetime',
@@ -513,17 +482,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     onDeviceDeleted(_deviceId: string): void {
-        const remainingItems = Math.max(0, this.pagination.total_items - 1);
-        const lastPage = Math.max(1, Math.ceil(remainingItems / this.pagination.page_size));
-        this.loadSummaryPage(Math.min(this.pagination.page, lastPage));
+        this.reloadAfterPageItemRemoval();
     }
 
     onDeviceArchived(_deviceId: string): void {
-        this.loadSummaryPage(1);
+        this.reloadAfterPageItemRemoval();
     }
 
     onDeviceUnarchived(_deviceId: string): void {
-        this.loadSummaryPage(1);
+        this.reloadAfterPageItemRemoval();
+    }
+
+    private reloadAfterPageItemRemoval(): void {
+        this.loadSummaryPage(this.pagination.page);
     }
 
     toggleArchived(): void {
@@ -532,25 +503,43 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     onPageChange(event: PageEvent): void {
-        const pageSize = event.pageSize as DashboardPageSize;
+        const pageSize = event.pageSize as DashboardHostPageSize;
         if (pageSize !== this.pagination.page_size) {
-            this.config = { ...this.config, dashboard_page_size: pageSize };
-            this._configService.config = { dashboard_page_size: pageSize };
+            this.config = { ...this.config, dashboard_host_page_size: pageSize };
+            this._configService.config = { dashboard_host_page_size: pageSize };
         }
         this.loadSummaryPage(event.pageIndex + 1, pageSize);
     }
 
-    private loadSummaryPage(page: number, pageSize?: DashboardPageSize): void {
+    applyHostSearch(): void {
+        this.appliedHostSearch = this.hostSearch.trim();
+        this.loadSummaryPage(1);
+    }
+
+    clearHostSearch(): void {
+        this.hostSearch = '';
+        this.appliedHostSearch = '';
+        this.loadSummaryPage(1);
+    }
+
+    private loadSummaryPage(page: number, pageSize?: DashboardHostPageSize): void {
+        const effectivePageSize = pageSize ?? this.config?.dashboard_host_page_size ?? 10;
         this._dashboardService
             .getSummaryPage({
                 page,
-                pageSize: pageSize ?? (this.pagination.page_size as DashboardPageSize),
+                pageSize: effectivePageSize,
+                groupBy: 'host',
                 archived: this.showArchived,
                 sort: this.config?.dashboard_sort,
                 display: this.config?.dashboard_display,
+                hostSearch: this.appliedHostSearch,
             })
             .pipe(takeUntil(this._unsubscribeAll))
-            .subscribe();
+            .subscribe((response) => {
+                if (response.pagination.total_pages > 0 && page > response.pagination.total_pages) {
+                    this.loadSummaryPage(response.pagination.total_pages, effectivePageSize);
+                }
+            });
     }
 
     dashboardColumns(): DashboardColumns {
@@ -622,7 +611,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const requestID = ++this.temperatureRequestID;
         if (selectedDeviceIDs.length === 0) {
             this.temperatureHistory = {};
-            this.tempChart?.updateSeries([]);
+            this._updateTemperatureChartSeries([]);
             this._changeDetectorRef.markForCheck();
             return;
         }
@@ -634,23 +623,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
                     return;
                 }
                 this.temperatureHistory = tempHistoryData;
-                this.tempChart?.updateSeries(this._deviceDataTemperatureSeries());
+                this._updateTemperatureChartSeries(this._deviceDataTemperatureSeries());
                 this._changeDetectorRef.markForCheck();
             });
     }
 
-    getMdadmArrayStatusColorClass(array: MDADMArrayModel): string {
-        const state = (array.state || '').toLowerCase();
-        if (state.includes('degraded') || state.includes('inactive')) {
-            return 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900';
+    private _updateTemperatureChartSeries(series: TemperatureChartSeries[]): void {
+        if (!this.temperatureOptions) {
+            return;
         }
-        if (state.includes('checking') || state.includes('resync') || state.includes('recover') || state.includes('rebuild')) {
-            return 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900';
-        }
-        if (state.includes('clean') || state.includes('active')) {
-            return 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900';
-        }
-        return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800';
+        this.temperatureOptions = { ...this.temperatureOptions, series };
     }
 
     /**

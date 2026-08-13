@@ -42,19 +42,20 @@ type Settings struct {
 		ReportPDFEnabled              bool   `json:"report_pdf_enabled" mapstructure:"report_pdf_enabled"`
 		NotifyOnCollectorError        bool   `json:"notify_on_collector_error" mapstructure:"notify_on_collector_error"`
 	} `json:"metrics" mapstructure:"metrics"`
-	Theme              string `json:"theme" mapstructure:"theme"`
-	Layout             string `json:"layout" mapstructure:"layout"`
-	DashboardDisplay   string `json:"dashboard_display" mapstructure:"dashboard_display"`
-	DashboardSort      string `json:"dashboard_sort" mapstructure:"dashboard_sort"`
-	DashboardDensity   string `json:"dashboard_density" mapstructure:"dashboard_density"`
-	TemperatureUnit    string `json:"temperature_unit" mapstructure:"temperature_unit"`
-	LineStroke         string `json:"line_stroke" mapstructure:"line_stroke"`
-	PoweredOnHoursUnit string `json:"powered_on_hours_unit" mapstructure:"powered_on_hours_unit"`
-	TimeFormat         string `json:"time_format" mapstructure:"time_format"`
-	DashboardColumns   int    `json:"dashboard_columns" mapstructure:"dashboard_columns"`
-	DashboardPageSize  int    `json:"dashboard_page_size" mapstructure:"dashboard_page_size"`
-	FileSizeSIUnits    bool   `json:"file_size_si_units" mapstructure:"file_size_si_units"`
-	Collector          struct {
+	Theme                 string `json:"theme" mapstructure:"theme"`
+	Layout                string `json:"layout" mapstructure:"layout"`
+	DashboardDisplay      string `json:"dashboard_display" mapstructure:"dashboard_display"`
+	DashboardSort         string `json:"dashboard_sort" mapstructure:"dashboard_sort"`
+	DashboardDensity      string `json:"dashboard_density" mapstructure:"dashboard_density"`
+	TemperatureUnit       string `json:"temperature_unit" mapstructure:"temperature_unit"`
+	LineStroke            string `json:"line_stroke" mapstructure:"line_stroke"`
+	PoweredOnHoursUnit    string `json:"powered_on_hours_unit" mapstructure:"powered_on_hours_unit"`
+	TimeFormat            string `json:"time_format" mapstructure:"time_format"`
+	DashboardColumns      int    `json:"dashboard_columns" mapstructure:"dashboard_columns"`
+	DashboardPageSize     int    `json:"dashboard_page_size" mapstructure:"dashboard_page_size"`
+	DashboardHostPageSize int    `json:"dashboard_host_page_size" mapstructure:"dashboard_host_page_size"`
+	FileSizeSIUnits       bool   `json:"file_size_si_units" mapstructure:"file_size_si_units"`
+	Collector             struct {
 		RetrieveSCTHistory bool `json:"retrieve_sct_temperature_history" mapstructure:"retrieve_sct_temperature_history"`
 		StoreTempHistory   bool `json:"store_temperature_history" mapstructure:"store_temperature_history"`
 	} `json:"collector" mapstructure:"collector"` // Missed collector ping notification settings
@@ -106,6 +107,7 @@ func (s *Settings) ApplyDefaults() {
 	defaultStr(&s.TimeFormat, "24")
 	defaultInt(&s.DashboardColumns, 2)
 	defaultInt(&s.DashboardPageSize, 25)
+	defaultInt(&s.DashboardHostPageSize, 10)
 
 	// Metrics: numeric fields where 0 is not a valid value.
 	// Note: StatusFilterAttributes defaults to 0 (All), which is the zero value, so no check needed.

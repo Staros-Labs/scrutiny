@@ -635,6 +635,23 @@ func (sr *scrutinyRepository) Migrate(ctx context.Context) error {
 				}).Error
 			},
 		},
+		{
+			ID: "m20260803000000", // repair AnalogJ/scrutiny 0.9.x device identity and history (#694)
+			Migrate: func(tx *gorm.DB) error {
+				return sr.migrateM20260803000000(ctx, tx)
+			},
+		},
+		{
+			ID: "m20260809000000", // add host-count dashboard page size setting (#674)
+			Migrate: func(tx *gorm.DB) error {
+				return tx.Create(&m20220716214900.Setting{
+					SettingKeyName:        "dashboard_host_page_size",
+					SettingKeyDescription: "Number of SMART dashboard hosts per page (5 | 10 | 25 | 50)",
+					SettingDataType:       "numeric",
+					SettingValueNumeric:   10,
+				}).Error
+			},
+		},
 	})
 
 	if err := m.Migrate(); err != nil {

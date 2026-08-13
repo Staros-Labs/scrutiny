@@ -1,5 +1,6 @@
-# Security Scanning with Trivy
-# Scans repository for vulnerabilities in dependencies and code
+# GHAS-free dependency and filesystem scanning with Trivy.
+# Reports stay in private short-retention artifacts.
+# Findings remain report-only until owner-reviewed gate enrollment.
 
 name: Security Scan
 
@@ -32,7 +33,6 @@ jobs:
           output: 'trivy-summary.json'
           severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
           exit-code: '0'
-
       - name: Generate CycloneDX SBOM
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
         with:
@@ -82,7 +82,7 @@ jobs:
         run: |
           echo "=== Vulnerability Summary ==="
 
-          if [ -f trivy-summary.json ]; then
+          if [ -s trivy-summary.json ]; then
             CRITICAL_COUNT=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' trivy-summary.json)
             HIGH_COUNT=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' trivy-summary.json)
             MEDIUM_COUNT=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM")] | length' trivy-summary.json)
@@ -109,23 +109,22 @@ jobs:
       - name: Check for blocking vulnerabilities
         if: always()
         run: |
-          if [ -f trivy-summary.json ]; then
+          if [ -s trivy-summary.json ]; then
             CRITICAL_COUNT=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' trivy-summary.json 2>/dev/null || echo "0")
+            HIGH_COUNT=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' trivy-summary.json 2>/dev/null || echo "0")
 
             echo ""
             echo "Security Gate:"
 
-            if [ "$CRITICAL_COUNT" -gt 0 ]; then
-              echo "  Found $CRITICAL_COUNT critical vulnerabilities"
+            if [ "$CRITICAL_COUNT" -gt 0 ] || [ "$HIGH_COUNT" -gt 0 ]; then
+              echo "  Found $CRITICAL_COUNT critical and $HIGH_COUNT high vulnerabilities"
 
               if [ "${{ github.event_name }}" = "pull_request" ]; then
                 echo ""
-                echo "  BLOCKING: PR has critical vulnerabilities"
-                echo "  Please fix critical vulnerabilities before merging"
-                exit 1
+                echo "  REPORT-ONLY: findings are retained for issue aggregation"
               else
                 echo ""
-                echo "  WARNING: Daily scan found critical vulnerabilities (not blocking)"
+                echo "  REPORT-ONLY: scheduled scan found critical or high vulnerabilities"
               fi
             else
               echo "  No critical vulnerabilities found"

@@ -25,6 +25,10 @@ func SaveSettings(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "dashboard_page_size must be one of 25, 50, 100, or 250"})
 		return
 	}
+	if !validSummaryHostPageSize(settings.DashboardHostPageSize) {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "dashboard_host_page_size must be one of 5, 10, 25, or 50"})
+		return
+	}
 
 	err = deviceRepo.SaveSettings(c, settings)
 	if err != nil {
@@ -34,9 +38,10 @@ func SaveSettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":                   true,
-		"settings":                  settings,
-		"server_version":            version.VERSION,
-		"collector_trigger_enabled": collectorTriggerEnabled(),
+		"success":                        true,
+		"settings":                       settings,
+		"server_version":                 version.VERSION,
+		"collector_trigger_enabled":      collectorTriggerEnabled(),
+		"zfs_pool_modifications_allowed": zfsPoolModificationsAllowed(c),
 	})
 }

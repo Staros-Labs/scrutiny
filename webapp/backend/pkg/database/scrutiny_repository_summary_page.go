@@ -9,12 +9,20 @@ import (
 )
 
 const defaultDashboardPageSize = 25
+const defaultDashboardHostPageSize = 10
 
 var validDashboardPageSizes = map[int]struct{}{
 	25:  {},
 	50:  {},
 	100: {},
 	250: {},
+}
+
+var validDashboardHostPageSizes = map[int]struct{}{
+	5:  {},
+	10: {},
+	25: {},
+	50: {},
 }
 
 func (sr *scrutinyRepository) GetSummaryPage(ctx context.Context, options models.DeviceSummaryPageOptions) (*models.DeviceSummaryPage, error) {
@@ -30,11 +38,12 @@ func (sr *scrutinyRepository) GetSummaryPage(ctx context.Context, options models
 func buildSummaryPage(summaries map[string]*models.DeviceSummary, options models.DeviceSummaryPageOptions) *models.DeviceSummaryPage {
 	ordered := make([]*models.DeviceSummary, 0, len(summaries))
 	attentionCount := 0
+	hostSearch := strings.ToLower(strings.TrimSpace(options.HostSearch))
 	for _, summary := range summaries {
 		if !summary.Device.Archived && summary.Device.DeviceStatus > 0 {
 			attentionCount++
 		}
-		if summary.Device.Archived == options.Archived {
+		if summary.Device.Archived == options.Archived && (hostSearch == "" || strings.Contains(strings.ToLower(summary.Device.HostId), hostSearch)) {
 			ordered = append(ordered, summary)
 		}
 	}
@@ -44,18 +53,34 @@ func buildSummaryPage(summaries map[string]*models.DeviceSummary, options models
 	})
 
 	totalItems := len(ordered)
+	if options.GroupByHost {
+		hosts := make([]string, 0)
+		seenHosts := make(map[string]struct{})
+		for _, summary := range ordered {
+			if _, seen := seenHosts[summary.Device.HostId]; seen {
+				continue
+			}
+			seenHosts[summary.Device.HostId] = struct{}{}
+			hosts = append(hosts, summary.Device.HostId)
+		}
+
+		totalItems = len(hosts)
+		start, end := summaryPageBounds(totalItems, options.Page, options.PageSize)
+		selectedHosts := make(map[string]struct{}, end-start)
+		for _, host := range hosts[start:end] {
+			selectedHosts[host] = struct{}{}
+		}
+		ordered = summariesForHosts(ordered, selectedHosts)
+	}
+
 	totalPages := 0
 	if totalItems > 0 {
 		totalPages = (totalItems + options.PageSize - 1) / options.PageSize
 	}
 
-	start := (options.Page - 1) * options.PageSize
-	if start > totalItems {
-		start = totalItems
-	}
-	end := start + options.PageSize
-	if end > totalItems {
-		end = totalItems
+	start, end := 0, len(ordered)
+	if !options.GroupByHost {
+		start, end = summaryPageBounds(totalItems, options.Page, options.PageSize)
 	}
 
 	pageSummaries := make(map[string]*models.DeviceSummary, end-start)
@@ -75,15 +100,45 @@ func buildSummaryPage(summaries map[string]*models.DeviceSummary, options models
 	}
 }
 
+func summaryPageBounds(totalItems, page, pageSize int) (int, int) {
+	start := (page - 1) * pageSize
+	if start > totalItems {
+		start = totalItems
+	}
+	end := start + pageSize
+	if end > totalItems {
+		end = totalItems
+	}
+	return start, end
+}
+
+func summariesForHosts(summaries []*models.DeviceSummary, hosts map[string]struct{}) []*models.DeviceSummary {
+	selected := make([]*models.DeviceSummary, 0)
+	for _, summary := range summaries {
+		if _, ok := hosts[summary.Device.HostId]; ok {
+			selected = append(selected, summary)
+		}
+	}
+	return selected
+}
+
 func normalizeSummaryPageOptions(sr *scrutinyRepository, options *models.DeviceSummaryPageOptions) {
 	if options.Page < 1 {
 		options.Page = 1
 	}
-	if _, ok := validDashboardPageSizes[options.PageSize]; !ok {
-		options.PageSize = sr.appConfig.GetInt("user.dashboard_page_size")
+	validPageSizes := validDashboardPageSizes
+	settingKey := "user.dashboard_page_size"
+	defaultPageSize := defaultDashboardPageSize
+	if options.GroupByHost {
+		validPageSizes = validDashboardHostPageSizes
+		settingKey = "user.dashboard_host_page_size"
+		defaultPageSize = defaultDashboardHostPageSize
 	}
-	if _, ok := validDashboardPageSizes[options.PageSize]; !ok {
-		options.PageSize = defaultDashboardPageSize
+	if _, ok := validPageSizes[options.PageSize]; !ok {
+		options.PageSize = sr.appConfig.GetInt(settingKey)
+	}
+	if _, ok := validPageSizes[options.PageSize]; !ok {
+		options.PageSize = defaultPageSize
 	}
 	if options.Sort == "" {
 		options.Sort = sr.appConfig.GetString("user.dashboard_sort")

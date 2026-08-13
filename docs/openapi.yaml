@@ -174,7 +174,7 @@ paths:
     get:
       tags: [Devices]
       summary: Get dashboard device summary
-      description: Without `page`, returns the legacy unpaginated summary. Supplying `page` enables global device pagination while retaining host-first ordering.
+      description: Without `page`, returns the legacy unpaginated summary. Supplying `page` enables pagination. Set `group_by=host` to paginate hosts while keeping all devices for each selected host together.
       parameters:
         - name: page
           in: query
@@ -186,8 +186,14 @@ paths:
           in: query
           schema:
             type: integer
-            enum: [25, 50, 100, 250]
-          description: Devices per page. Defaults to the saved dashboard setting.
+            enum: [5, 10, 25, 50, 100, 250]
+          description: Hosts per page when `group_by=host` (5, 10, 25, or 50); otherwise devices per page (25, 50, 100, or 250). Defaults to the matching saved dashboard setting.
+        - name: group_by
+          in: query
+          schema:
+            type: string
+            enum: [host]
+          description: Set to `host` to paginate by host count and keep every device for a selected host on the same page.
         - name: archived
           in: query
           schema:
@@ -206,6 +212,11 @@ paths:
             type: string
             enum: [name, serial_id, uuid, label]
           description: Title source used by title sorting. Defaults to the saved dashboard setting.
+        - name: host
+          in: query
+          schema:
+            type: string
+          description: Case-insensitive host ID substring applied before pagination.
       responses:
         "200":
           description: Device summary payload
@@ -1097,7 +1108,7 @@ paths:
       summary: Get ZFS pool summary
       responses:
         "200":
-          description: ZFS pools
+          description: Active and archived ZFS pools for dashboard filtering
           content:
             application/json:
               schema:
@@ -1109,8 +1120,8 @@ paths:
                     type: object
                     properties:
                       pools:
-                        type: array
-                        items:
+                        type: object
+                        additionalProperties:
                           $ref: "#/components/schemas/ZFSPool"
         "500":
           $ref: "#/components/responses/ErrorResponse"
@@ -1162,6 +1173,8 @@ paths:
           $ref: "#/components/responses/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/zfs/pool/{guid}/unarchive:
     post:
       tags: [ZFS]
@@ -1173,6 +1186,8 @@ paths:
           $ref: "#/components/responses/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/zfs/pool/{guid}/mute:
     post:
       tags: [ZFS]
@@ -1184,6 +1199,8 @@ paths:
           $ref: "#/components/responses/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/zfs/pool/{guid}/unmute:
     post:
       tags: [ZFS]
@@ -1195,6 +1212,8 @@ paths:
           $ref: "#/components/responses/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/zfs/pool/{guid}/label:
     post:
       tags: [ZFS]
@@ -1216,6 +1235,8 @@ paths:
           $ref: "#/components/responses/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/zfs/pool/{guid}:
     delete:
       tags: [ZFS]
@@ -1227,6 +1248,8 @@ paths:
           $ref: "#/components/responses/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/btrfs/filesystems/register:
     post:
       tags: [Btrfs]
@@ -1538,6 +1561,12 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     Unauthorized:
       description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Operation disabled by server configuration
       content:
         application/json:
           schema:
@@ -2049,6 +2078,10 @@ components:
           type: integer
           enum: [25, 50, 100, 250]
           default: 25
+        dashboard_host_page_size:
+          type: integer
+          enum: [5, 10, 25, 50]
+          default: 10
         temperature_unit:
           type: string
         line_stroke:
@@ -2148,6 +2181,8 @@ components:
           type: string
         collector_trigger_enabled:
           type: boolean
+        zfs_pool_modifications_allowed:
+          type: boolean
     SaveSettingsResponse:
       type: object
       properties:
@@ -2155,6 +2190,12 @@ components:
           type: boolean
         settings:
           $ref: "#/components/schemas/Settings"
+        server_version:
+          type: string
+        collector_trigger_enabled:
+          type: boolean
+        zfs_pool_modifications_allowed:
+          type: boolean
     AttributeOverride:
       type: object
       properties:
@@ -3013,7 +3054,7 @@ components:
           minimum: 1
         page_size:
           type: integer
-          enum: [25, 50, 100, 250]
+          enum: [5, 10, 25, 50, 100, 250]
         total_items:
           type: integer
           minimum: 0

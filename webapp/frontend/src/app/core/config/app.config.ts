@@ -11,6 +11,7 @@ export type DashboardColumns = 2 | 3 | 4 | 5;
 export type DashboardDensity = 'comfortable' | 'compact';
 
 export type DashboardPageSize = 25 | 50 | 100 | 250;
+export type DashboardHostPageSize = 5 | 10 | 25 | 50;
 
 export type DashboardSort =
     | 'status'
@@ -105,6 +106,7 @@ export interface AppConfig {
     dashboard_columns?: DashboardColumns;
     dashboard_density?: DashboardDensity;
     dashboard_page_size?: DashboardPageSize;
+    dashboard_host_page_size?: DashboardHostPageSize;
 
     temperature_unit?: TemperatureUnit;
 
@@ -173,6 +175,7 @@ export interface AppConfig {
     // Server capabilities (populated from API response, not stored in settings)
     server_version?: string;
     collector_trigger_enabled?: boolean;
+    zfs_pool_modifications_allowed?: boolean;
 }
 
 /**
@@ -192,6 +195,7 @@ export const appConfig: AppConfig = {
     dashboard_columns: 2,
     dashboard_density: 'comfortable',
     dashboard_page_size: 25,
+    dashboard_host_page_size: 10,
 
     temperature_unit: 'celsius',
     file_size_si_units: false,
@@ -199,6 +203,9 @@ export const appConfig: AppConfig = {
 
     time_format: '24',
     line_stroke: 'smooth',
+
+    // Server must explicitly enable mutation controls after remote config loads.
+    zfs_pool_modifications_allowed: false,
 
     collector: {
         retrieve_sct_temperature_history: true,

@@ -59,6 +59,8 @@ services:
       # Enable filesystem capacity monitoring (requires host mount visibility)
       # COLLECTOR_FILESYSTEM_CRON_SCHEDULE: "*/15 * * * *"
       # COLLECTOR_FILESYSTEM_RUN_STARTUP: "true"
+      # Monitoring-only ZFS UI/API. Blocks archive, mute, label, and delete actions.
+      # SCRUTINY_WEB_ZFS_ALLOW_POOL_MODIFICATIONS: 'false'
       # Authentication (disabled by default, see docs/AUTH.md)
       # SCRUTINY_WEB_AUTH_ENABLED: 'true'
       # SCRUTINY_WEB_AUTH_TOKEN: 'your-secret-api-token'

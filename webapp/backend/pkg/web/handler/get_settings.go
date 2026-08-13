@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os/exec"
 
+	"github.com/analogj/scrutiny/webapp/backend/pkg/config"
 	"github.com/analogj/scrutiny/webapp/backend/pkg/database"
 	"github.com/analogj/scrutiny/webapp/backend/pkg/version"
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,11 @@ func collectorTriggerEnabled() bool {
 	return execErr == nil
 }
 
+func zfsPoolModificationsAllowed(c *gin.Context) bool {
+	appConfig := c.MustGet("CONFIG").(config.Interface)
+	return appConfig.GetBool(config.WebZFSAllowPoolModificationsKey)
+}
+
 func GetSettings(c *gin.Context) {
 	logger := c.MustGet("LOGGER").(*logrus.Entry)
 	deviceRepo := c.MustGet("DEVICE_REPOSITORY").(database.DeviceRepo)
@@ -31,9 +37,10 @@ func GetSettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":                   true,
-		"settings":                  settings,
-		"server_version":            version.VERSION,
-		"collector_trigger_enabled": collectorTriggerEnabled(),
+		"success":                        true,
+		"settings":                       settings,
+		"server_version":                 version.VERSION,
+		"collector_trigger_enabled":      collectorTriggerEnabled(),
+		"zfs_pool_modifications_allowed": zfsPoolModificationsAllowed(c),
 	})
 }

@@ -26,6 +26,8 @@ services:
       - './config:/opt/scrutiny/config'
     environment:
       SCRUTINY_WEB_INFLUXDB_HOST: 'influxdb'
+      # Monitoring-only ZFS UI/API. Blocks archive, mute, label, and delete actions.
+      # SCRUTINY_WEB_ZFS_ALLOW_POOL_MODIFICATIONS: 'false'
       # Authentication (disabled by default, see docs/AUTH.md)
       # SCRUTINY_WEB_AUTH_ENABLED: 'true'
       # SCRUTINY_WEB_AUTH_TOKEN: 'your-secret-api-token'

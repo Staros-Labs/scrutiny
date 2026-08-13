@@ -117,6 +117,7 @@ type DeviceRepo interface {
 	UpdateZFSPoolLabel(ctx context.Context, guid string, label string) error
 	DeleteZFSPool(ctx context.Context, guid string) error
 	GetZFSPoolsSummary(ctx context.Context) (map[string]*models.ZFSPool, error)
+	GetAllZFSPoolsSummary(ctx context.Context) (map[string]*models.ZFSPool, error)
 
 	// ZFS Pool metrics
 	SaveZFSPoolMetrics(ctx context.Context, pool models.ZFSPool) error

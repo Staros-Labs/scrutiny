@@ -4,6 +4,14 @@ Scrutiny groups SMART devices by non-empty collector `host_id` values. Open **Ho
 
 The host page does not include ZFS pools, MDADM arrays, Btrfs filesystems, filesystem-capacity records, or devices whose collector did not send a host ID.
 
+## SMART dashboard navigation
+
+The SMART dashboard pages by host instead of by device. All SMART devices assigned to one host remain together on the same page. Dashboard Settings provides 5, 10, 25, and 50 hosts-per-page options; the default is 10.
+
+Use **Search hosts** on the SMART dashboard to filter host IDs across the full active or archived result set. Search is case-insensitive and runs before pagination.
+
+Archiving, unarchiving, or deleting a device reloads the current page. If that page no longer exists, Scrutiny loads the last valid page. MDADM arrays remain on the dedicated MDADM page.
+
 ## Archive and unarchive
 
 Archiving a host marks every SMART device currently assigned to that host as archived. Device metadata and time-series history remain stored. Unarchiving restores every device assigned to that host.

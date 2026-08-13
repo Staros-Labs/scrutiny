@@ -23,6 +23,7 @@
 #   web.database.location                 -> SCRUTINY_WEB_DATABASE_LOCATION
 #   web.database.journal_mode             -> SCRUTINY_WEB_DATABASE_JOURNAL_MODE
 #   web.src.frontend.path                 -> SCRUTINY_WEB_SRC_FRONTEND_PATH
+#   web.zfs.allow_pool_modifications      -> SCRUTINY_WEB_ZFS_ALLOW_POOL_MODIFICATIONS
 #   web.influxdb.scheme                   -> SCRUTINY_WEB_INFLUXDB_SCHEME
 #   web.influxdb.host                     -> SCRUTINY_WEB_INFLUXDB_HOST
 #   web.influxdb.port                     -> SCRUTINY_WEB_INFLUXDB_PORT
@@ -87,6 +88,12 @@ web:
     # the location on the filesystem where scrutiny javascript + css is located
     frontend:
       path: /opt/scrutiny/web
+
+  # ZFS pool management controls. Set false for monitoring-only deployments.
+  # This blocks archive, unarchive, mute, unmute, label, and delete for every user.
+  # Restart the web server after changing this value.
+  zfs:
+    allow_pool_modifications: true
 
   # if you're running influxdb on a different host (or using a cloud-provider) you'll need to update the host & port below.
   # token, org, bucket are unnecessary for a new InfluxDB installation, as Scrutiny will automatically run the InfluxDB setup,

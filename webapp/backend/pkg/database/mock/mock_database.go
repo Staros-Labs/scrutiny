@@ -154,6 +154,21 @@ func (mr *MockDeviceRepoMockRecorder) GetAllOverridesForDisplay(ctx interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllOverridesForDisplay", reflect.TypeOf((*MockDeviceRepo)(nil).GetAllOverridesForDisplay), ctx)
 }
 
+// GetAllZFSPoolsSummary mocks base method.
+func (m *MockDeviceRepo) GetAllZFSPoolsSummary(ctx context.Context) (map[string]*models.ZFSPool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllZFSPoolsSummary", ctx)
+	ret0, _ := ret[0].(map[string]*models.ZFSPool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllZFSPoolsSummary indicates an expected call of GetAllZFSPoolsSummary.
+func (mr *MockDeviceRepoMockRecorder) GetAllZFSPoolsSummary(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllZFSPoolsSummary", reflect.TypeOf((*MockDeviceRepo)(nil).GetAllZFSPoolsSummary), ctx)
+}
+
 // GetAttributeOverrideByID mocks base method.
 func (m *MockDeviceRepo) GetAttributeOverrideByID(ctx context.Context, id uint) (*models.AttributeOverride, error) {
 	m.ctrl.T.Helper()
