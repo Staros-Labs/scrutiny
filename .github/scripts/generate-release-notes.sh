@@ -4,7 +4,8 @@
 #
 # This script is deterministic:
 # - merged PR metadata is the source of truth
-# - PR ## Summary blocks provide the actual note content
+# - PR ## Summary blocks provide normal note content
+# - Release promotion PRs preserve authored sections through ## Test plan
 # - linked issues come from PR bodies
 # - completeness is validated before notes are emitted
 
@@ -73,6 +74,16 @@ MERGED_JSON=$(jq -s \
 get_summary_block() {
     local body="$1"
     [ -z "$body" ] && return
+
+    if echo "$body" | grep -q '^## Product changes$'; then
+        echo "$body" | awk '
+            /^## Summary$/ { in_release=1 }
+            /^## Test plan$/ { in_release=0 }
+            in_release { print }
+        '
+        return
+    fi
+
     echo "$body" | tr -d '\r' | sed -n '/^## Summary/,/^## /{/^## /d; p;}'
 }
 
@@ -210,7 +221,7 @@ for ((i = 0; i < PR_COUNT; i++)); do
         CICD+=("$ENTRY")
     elif [[ "$pr_title" =~ ^chore\(deps\):|[Dd]ependen|[Uu]pdate.*go\.(mod|sum) ]]; then
         DEPS+=("$ENTRY")
-    elif [[ ! "$pr_title" =~ ^chore ]]; then
+    else
         OTHER+=("$ENTRY")
     fi
 done
@@ -283,7 +294,7 @@ validate_output() {
     local missing=0
     while IFS=$'\t' read -r pr_num item; do
         [ -z "$item" ] && continue
-        if ! grep -Fq -- "  - $item" "$OUTPUT_FILE"; then
+        if ! grep -Fq -- "$item" "$OUTPUT_FILE"; then
             echo "Missing summary item from PR #$pr_num: $item" >&2
             missing=1
         fi
