@@ -16,7 +16,7 @@ NEW_TAG="${2:-$(git describe --tags --abbrev=0 HEAD 2>/dev/null || echo "HEAD")}
 REPO="${GITHUB_REPOSITORY:-Starosdev/scrutiny}"
 MAX_SUMMARY_BULLETS=8
 # Operational-only PRs excluded from user-facing release notes.
-EXCLUDED_PRS_REGEX='^(701|724|726)$'
+EXCLUDED_PRS_REGEX='^(701|719|724|726)$'
 
 if [ -z "$PREV_TAG" ]; then
     echo "Error: Could not determine previous tag" >&2
