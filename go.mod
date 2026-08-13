@@ -15,7 +15,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/influxdata/influxdb-client-go/v2 v2.14.0
-	github.com/jaypipes/ghw v0.24.0
+	github.com/jaypipes/ghw v0.25.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nicholas-fedor/shoutrrr v0.16.1
 	github.com/prometheus/client_golang v1.23.2
@@ -27,6 +27,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v2 v2.27.7
 	go.uber.org/automaxprocs v1.6.0
+	go.yaml.in/yaml/v3 v3.0.4
 	golang.org/x/sync v0.21.0
 	gorm.io/gorm v1.31.2
 )
@@ -88,7 +89,6 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.22.0 // indirect
 	golang.org/x/crypto v0.52.0 // indirect
 	golang.org/x/net v0.55.0 // indirect

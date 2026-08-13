@@ -104,8 +104,16 @@ func (sr *scrutinyRepository) insertVdevsRecursive(ctx context.Context, poolGUID
 
 // GetZFSPools returns all non-archived ZFS pools
 func (sr *scrutinyRepository) GetZFSPools(ctx context.Context) ([]models.ZFSPool, error) {
+	return sr.getZFSPools(ctx, false)
+}
+
+func (sr *scrutinyRepository) getZFSPools(ctx context.Context, includeArchived bool) ([]models.ZFSPool, error) {
 	pools := []models.ZFSPool{}
-	if err := sr.gormClient.WithContext(ctx).Where("archived = ?", false).Find(&pools).Error; err != nil {
+	query := sr.gormClient.WithContext(ctx)
+	if !includeArchived {
+		query = query.Where("archived = ?", false)
+	}
+	if err := query.Find(&pools).Error; err != nil {
 		return nil, fmt.Errorf("could not get ZFS pools from DB: %v", err)
 	}
 	return pools, nil
@@ -231,13 +239,25 @@ func (sr *scrutinyRepository) GetZFSPoolsSummary(ctx context.Context) (map[strin
 	if err != nil {
 		return nil, err
 	}
+	return zfsPoolsSummary(pools), nil
+}
 
+// GetAllZFSPoolsSummary returns active and archived pools for user-facing views that can filter them.
+func (sr *scrutinyRepository) GetAllZFSPoolsSummary(ctx context.Context) (map[string]*models.ZFSPool, error) {
+	pools, err := sr.getZFSPools(ctx, true)
+	if err != nil {
+		return nil, err
+	}
+	return zfsPoolsSummary(pools), nil
+}
+
+func zfsPoolsSummary(pools []models.ZFSPool) map[string]*models.ZFSPool {
 	summary := make(map[string]*models.ZFSPool)
 	for i := range pools {
 		summary[pools[i].GUID] = &pools[i]
 	}
 
-	return summary, nil
+	return summary
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

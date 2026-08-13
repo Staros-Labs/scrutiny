@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/analogj/scrutiny/webapp/backend/pkg/config"
 	mock_database "github.com/analogj/scrutiny/webapp/backend/pkg/database/mock"
 	"github.com/analogj/scrutiny/webapp/backend/pkg/models"
 	"github.com/analogj/scrutiny/webapp/backend/pkg/web/handler"
@@ -17,15 +18,19 @@ import (
 )
 
 // setupSettingsRouter creates a minimal Gin router wired to the settings handlers.
-func setupSettingsRouter(t *testing.T, mockRepo *mock_database.MockDeviceRepo) *gin.Engine {
+func setupSettingsRouter(t *testing.T, mockRepo *mock_database.MockDeviceRepo, zfsPoolModificationsAllowed bool) *gin.Engine {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 	logger := logrus.WithField("test", t.Name())
+	appConfig, err := config.Create()
+	require.NoError(t, err)
+	appConfig.Set(config.WebZFSAllowPoolModificationsKey, zfsPoolModificationsAllowed)
 
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("LOGGER", logger)
 		c.Set("DEVICE_REPOSITORY", mockRepo)
+		c.Set("CONFIG", appConfig)
 		c.Next()
 	})
 	r.GET("/api/settings", handler.GetSettings)
@@ -39,7 +44,7 @@ func TestGetSettings_IncludesServerCapabilityFlags(t *testing.T) {
 	mockRepo := mock_database.NewMockDeviceRepo(mockCtrl)
 	mockRepo.EXPECT().LoadSettings(gomock.Any()).Return(&models.Settings{}, nil)
 
-	router := setupSettingsRouter(t, mockRepo)
+	router := setupSettingsRouter(t, mockRepo, false)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/settings", nil)
@@ -55,6 +60,7 @@ func TestGetSettings_IncludesServerCapabilityFlags(t *testing.T) {
 	require.True(t, hasFlag, "GET response must carry collector_trigger_enabled")
 	_, isBool := response["collector_trigger_enabled"].(bool)
 	require.True(t, isBool, "collector_trigger_enabled must be a boolean")
+	require.Equal(t, false, response["zfs_pool_modifications_allowed"])
 }
 
 // TestSaveSettings_PreservesServerCapabilityFlags is the regression guard for the
@@ -67,7 +73,7 @@ func TestSaveSettings_PreservesServerCapabilityFlags(t *testing.T) {
 	mockRepo := mock_database.NewMockDeviceRepo(mockCtrl)
 	mockRepo.EXPECT().SaveSettings(gomock.Any(), gomock.Any()).Return(nil)
 
-	router := setupSettingsRouter(t, mockRepo)
+	router := setupSettingsRouter(t, mockRepo, false)
 
 	body := strings.NewReader(`{"temperature_unit": "celsius"}`)
 	w := httptest.NewRecorder()
@@ -85,4 +91,37 @@ func TestSaveSettings_PreservesServerCapabilityFlags(t *testing.T) {
 	require.True(t, hasFlag, "save response must carry collector_trigger_enabled so the Run collectors button survives a save")
 	_, isBool := response["collector_trigger_enabled"].(bool)
 	require.True(t, isBool, "collector_trigger_enabled must be a boolean")
+	require.Equal(t, false, response["zfs_pool_modifications_allowed"])
+}
+
+func TestSaveSettingsRejectsUnsupportedDashboardPageSize(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	t.Cleanup(mockCtrl.Finish)
+	mockRepo := mock_database.NewMockDeviceRepo(mockCtrl)
+	router := setupSettingsRouter(t, mockRepo, true)
+
+	body := strings.NewReader(`{"dashboard_page_size": 10}`)
+	response := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodPost, "/api/settings", body)
+	request.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(response, request)
+
+	require.Equal(t, http.StatusBadRequest, response.Code)
+	require.Contains(t, response.Body.String(), "dashboard_page_size")
+}
+
+func TestSaveSettingsRejectsUnsupportedDashboardHostPageSize(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	t.Cleanup(mockCtrl.Finish)
+	mockRepo := mock_database.NewMockDeviceRepo(mockCtrl)
+	router := setupSettingsRouter(t, mockRepo, true)
+
+	body := strings.NewReader(`{"dashboard_host_page_size": 100}`)
+	response := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodPost, "/api/settings", body)
+	request.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(response, request)
+
+	require.Equal(t, http.StatusBadRequest, response.Code)
+	require.Contains(t, response.Body.String(), "dashboard_host_page_size")
 }

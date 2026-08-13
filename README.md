@@ -51,6 +51,7 @@ Full credit for the original vision and architecture goes to [AnalogJ](https://g
 - **HTML Email Notifications** - Rich HTML emails with plain-text fallback for reports, test notifications, collector errors, missed ping digests, and other alert emails over SMTP
 - **Enhanced Seagate Drive Support** - Better timeout handling and FARM log collection for Seagate drives
 - **Workload Insights** - Visualize daily read/write rates, I/O intensity, SSD endurance, and activity spike detection
+- **SMART Host Management** - Search hosts across the SMART dashboard, keep each host's devices together during pagination, and bulk archive, unarchive, or safely purge devices
 - **Home Assistant MQTT Discovery** - Native MQTT integration for automatic device discovery in Home Assistant
 - **UI-Configurable Notification URLs** - Add, edit, test, and delete notification endpoints directly in the web UI
 - **Uptime Kuma Push Monitor** - Dedicated push-based integration for Uptime Kuma status monitoring
@@ -132,7 +133,7 @@ These S.M.A.R.T hard drive self-tests can help you detect and replace failing ha
 - Configurable Alerting/Notifications via Webhooks
 
 ### Extended Features (This Fork)
-- **ZFS Pool Monitoring** - Track pool health, capacity, and status
+- **ZFS Pool Monitoring** - Track pool health, capacity, and status, with an optional monitoring-only mode that blocks pool record changes
 - **Prometheus Metrics Endpoint** - `/api/metrics` for Grafana integration
 - **Device Archiving** - Archive old drives to declutter the dashboard
 - **Per-Device Notification Muting** - Control which drives trigger alerts
@@ -150,6 +151,7 @@ These S.M.A.R.T hard drive self-tests can help you detect and replace failing ha
 - **Missed Ping Digest** - Batch notification when multiple collectors go unreachable
 - **HTML Email Notifications** - Rich HTML formatting with plain-text fallback for SMTP notifications, including reports, test notifications, collector errors, missed ping digests, heartbeat, performance degradation, replacement risk, and MDADM degradation alerts
 - **Workload Insights** - Daily read/write rates, R/W ratio, I/O intensity classification, SSD endurance tracking, and activity spike detection
+- **SMART Host Management** - Global dashboard host search, host-count pagination, and bulk archive, unarchive, or confirmed permanent purge with shared-WWN protection ([operator guide](docs/HOST_MANAGEMENT.md))
 - **Consumer Drive Profiles** - Apply vetted ATA HDD and SSD profiles based on Backblaze-informed thresholds, with opt-out controls and replacement-risk transparency
 - **Filesystem Capacity Monitoring** - Track logical filesystem free space independently from SMART device health
 - **MDADM Monitoring** - Monitor Linux software RAID arrays with a dedicated collector
@@ -316,6 +318,8 @@ it is possible to run it manually without much work. You can even mix and match,
 a manual installation for the other.
 
 See [docs/INSTALL_MANUAL.md](docs/INSTALL_MANUAL.md) for instructions.
+For a single download containing every collector plus a built-in scheduler,
+see [Standalone Collector Omnibus](docs/INSTALL_COLLECTOR_OMNIBUS.md).
 
 ## Usage
 
@@ -326,6 +330,14 @@ drive that Scrutiny detected. The collector is configured to run once a day, but
 
 For users of the docker Hub/Spoke deployment or manual install: initially the dashboard will be empty.
 After the first collector run, you'll be greeted with a list of all your hard drives and their current smart status.
+
+### SMART Dashboard Navigation
+
+The SMART dashboard paginates by host so every device reported by one host stays on the same page. Open Dashboard Settings to select 5, 10, 25, or 50 hosts per page; the default is 10. Use **Search hosts** to filter host IDs across all pages before pagination.
+
+Archiving, unarchiving, or deleting a device reloads the current page. Scrutiny moves to the last valid page only when the current page no longer exists. MDADM arrays remain available from the dedicated MDADM page and do not appear among SMART device cards.
+
+See [SMART Host Management](docs/HOST_MANAGEMENT.md) for host archive and purge behavior.
 
 ```bash
 docker exec scrutiny /opt/scrutiny/bin/scrutiny-collector-metrics run
@@ -775,6 +787,7 @@ Dots and dashes in key names become underscores.
 | `web.database.location` | `SCRUTINY_WEB_DATABASE_LOCATION` | `/opt/scrutiny/config/scrutiny.db` |
 | `web.database.journal_mode` | `SCRUTINY_WEB_DATABASE_JOURNAL_MODE` | `WAL` |
 | `web.src.frontend.path` | `SCRUTINY_WEB_SRC_FRONTEND_PATH` | `/opt/scrutiny/web` |
+| `web.zfs.allow_pool_modifications` | `SCRUTINY_WEB_ZFS_ALLOW_POOL_MODIFICATIONS` | `true` |
 | `web.influxdb.scheme` | `SCRUTINY_WEB_INFLUXDB_SCHEME` | `http` |
 | `web.influxdb.host` | `SCRUTINY_WEB_INFLUXDB_HOST` | `localhost` |
 | `web.influxdb.port` | `SCRUTINY_WEB_INFLUXDB_PORT` | `8086` |

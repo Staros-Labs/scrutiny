@@ -75,6 +75,22 @@ These variables are handled by the container entrypoint script:
 | `COLLECTOR_ZFS_RUN_STARTUP` | `false` | Set to `true` to run the ZFS collector immediately when the container starts |
 | `COLLECTOR_ZFS_RUN_STARTUP_SLEEP` | `1` | Delay in seconds before startup collection |
 
+### Monitoring-Only Pool Management
+
+Set the web server to monitoring-only mode for ZFS pools when dashboard users should view pool health without changing pool records:
+
+```yaml
+web:
+  zfs:
+    allow_pool_modifications: false
+```
+
+Docker deployments can set `SCRUTINY_WEB_ZFS_ALLOW_POOL_MODIFICATIONS=false`. Restart the web server after changing this startup configuration.
+
+When disabled, Scrutiny returns `403` for archive, unarchive, mute, unmute, label, and delete requests. Collector registration, metric uploads, and all read endpoints remain available. The restriction is global because Scrutiny does not define per-user roles; administrators must re-enable the setting and restart the web server before modifying pools.
+
+Archived pools remain available through the dashboard's **Archived** filter. Collector registration updates their metrics but does not unarchive them. Prometheus metrics and generated reports continue to exclude archived pools.
+
 ### Collector Configuration Variables
 
 These variables configure the collector binary itself:
@@ -210,7 +226,7 @@ The ZFS monitoring feature exposes the following API endpoints:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/zfs/summary` | Get summary of all ZFS pools |
+| GET | `/api/zfs/summary` | Get active and archived ZFS pools for dashboard filtering |
 | GET | `/api/zfs/pool/:guid/details` | Get detailed pool info with vdev hierarchy |
 | POST | `/api/zfs/pools/register` | Register pools (used by collector) |
 | POST | `/api/zfs/pool/:guid/metrics` | Upload metrics (used by collector) |

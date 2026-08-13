@@ -54,6 +54,7 @@ export class ScrutinyConfigService {
                         ...merged,
                         server_version: response.server_version ?? current.server_version,
                         collector_trigger_enabled: response.collector_trigger_enabled ?? current.collector_trigger_enabled,
+                        zfs_pool_modifications_allowed: response.zfs_pool_modifications_allowed ?? current.zfs_pool_modifications_allowed ?? false,
                     };
                 }),
                 tap((settings: AppConfig) => {
@@ -78,6 +79,7 @@ export class ScrutinyConfigService {
                             ...merged,
                             server_version: response.server_version,
                             collector_trigger_enabled: response.collector_trigger_enabled,
+                            zfs_pool_modifications_allowed: response.zfs_pool_modifications_allowed ?? false,
                         };
                     }),
                     tap((settings: AppConfig) => {

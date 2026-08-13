@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-8">
         <div class="flex items-center">
-            <button mat-icon-button (click)="goBack()" class="mr-4">
+            <button mat-icon-button (click)="goBack()" class="mr-4" aria-label="Back to ZFS pools">
                 <mat-icon [svgIcon]="'heroicons_outline:arrow-left'"></mat-icon>
             </button>
             <div>
@@ -12,12 +12,14 @@
             </div>
         </div>
 
+        @if (config?.zfs_pool_modifications_allowed === true) {
         <div class="flex items-center">
-            <button mat-stroked-button (click)="toggleMuted()" [matTooltip]="pool.muted ? 'Unmute notifications' : 'Mute notifications'">
+            <button mat-stroked-button data-testid="zfs-pool-mute-toggle" (click)="toggleMuted()" [matTooltip]="pool.muted ? 'Unmute notifications' : 'Mute notifications'">
                 <mat-icon class="icon-size-20" [svgIcon]="pool.muted ? 'notifications_off' : 'notifications'"> </mat-icon>
                 <span class="ml-2">{{ pool.muted ? 'Unmute' : 'Mute' }}</span>
             </button>
         </div>
+        }
     </div>
 
     <!-- Pool Overview -->

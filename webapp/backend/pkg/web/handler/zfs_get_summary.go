@@ -13,7 +13,7 @@ func GetZFSPoolsSummary(c *gin.Context) {
 	deviceRepo := c.MustGet("DEVICE_REPOSITORY").(database.DeviceRepo)
 	logger := c.MustGet("LOGGER").(*logrus.Entry)
 
-	summary, err := deviceRepo.GetZFSPoolsSummary(c)
+	summary, err := deviceRepo.GetAllZFSPoolsSummary(c)
 	if err != nil {
 		logger.Errorln("An error occurred while getting ZFS pools summary", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false})

@@ -1,11 +1,60 @@
 package database
 
 import (
+	"context"
 	mock_config "github.com/analogj/scrutiny/webapp/backend/pkg/config/mock"
+	"github.com/analogj/scrutiny/webapp/backend/pkg/models/collector"
 	"github.com/golang/mock/gomock"
+	"github.com/influxdata/influxdb-client-go/v2/api/write"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
+
+type countingWriteAPI struct {
+	stubWriteAPI
+	points int
+}
+
+func (s *countingWriteAPI) WritePoint(_ context.Context, points ...*write.Point) error {
+	s.points += len(points)
+	return nil
+}
+
+func TestSaveSmartTemperatureSkipsWritesWhenHistoryStorageDisabled(t *testing.T) {
+	writeAPI := &countingWriteAPI{}
+	deviceRepo := scrutinyRepository{influxWriteApi: writeAPI}
+
+	err := deviceRepo.SaveSmartTemperature(context.Background(), "wwn-1", "device-1", &collector.SmartInfo{}, true, false)
+
+	require.NoError(t, err)
+	require.Zero(t, writeAPI.points)
+}
+
+func TestSaveSmartTemperatureStoresCurrentPointWhenHistoryStorageEnabled(t *testing.T) {
+	writeAPI := &countingWriteAPI{}
+	deviceRepo := scrutinyRepository{influxWriteApi: writeAPI}
+
+	err := deviceRepo.SaveSmartTemperature(context.Background(), "wwn-1", "device-1", &collector.SmartInfo{}, false, true)
+
+	require.NoError(t, err)
+	require.Equal(t, 1, writeAPI.points)
+}
+
+func TestAggregateTempQueryFiltersSelectedWWNs(t *testing.T) {
+	t.Parallel()
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	fakeConfig := mock_config.NewMockInterface(mockCtrl)
+	fakeConfig.EXPECT().GetString("web.influxdb.bucket").Return("metrics").AnyTimes()
+
+	deviceRepo := scrutinyRepository{appConfig: fakeConfig}
+	influxDBScript := deviceRepo.aggregateTempQuery(DURATION_KEY_WEEK, "wwn-1", `wwn-"2`)
+
+	require.Contains(t, influxDBScript, `contains(value: r["device_wwn"], set: ["wwn-1", "wwn-\"2"])`)
+	require.Equal(t, 1, strings.Count(influxDBScript, `contains(value: r["device_wwn"]`))
+}
 
 func Test_aggregateTempQuery_Day(t *testing.T) {
 	t.Parallel()

@@ -1,0 +1,22 @@
+name: Docker Permissions
+
+on:
+  pull_request:
+    paths:
+      - 'docker/**'
+      - 'webapp/frontend/**'
+      - 'Makefile'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/docker-permissions.yaml'
+
+jobs:
+  frontend-permissions:
+    name: Test Docker frontend permissions
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Test Docker frontend permissions
+        run: bash docker/tests/frontend-permissions_test.sh
