@@ -36,7 +36,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24.15.0
+      - name: Install release dependencies
+        run: npm ci --ignore-scripts
 
       - name: Force release commit (manual trigger only)
         if: github.event_name == 'workflow_dispatch' && inputs.release_type != 'auto'
@@ -63,17 +65,7 @@ jobs:
 
       - name: Semantic Release
         id: semantic
-        uses: cycjimmy/semantic-release-action@v6
-        with:
-          semantic_version: 24
-          extra_plugins: |
-            @semantic-release/commit-analyzer
-            @semantic-release/release-notes-generator
-            @semantic-release/changelog
-            @semantic-release/exec
-            @semantic-release/git
-            @semantic-release/github
-            conventional-changelog-conventionalcommits
+        run: node .github/scripts/run-semantic-release.mjs
         env:
           GITHUB_TOKEN: ${{ secrets.SCRUTINY_GITHUB_TOKEN }}
         # semantic-release updates webapp/backend/pkg/version/version.go in the
