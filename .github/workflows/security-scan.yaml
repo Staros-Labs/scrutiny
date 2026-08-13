@@ -1,5 +1,5 @@
 # GHAS-free dependency and filesystem scanning with Trivy.
-# JSON stays in a private short-retention artifact; no SARIF upload is used.
+# Reports stay in private short-retention artifacts.
 # Findings remain report-only until owner-reviewed gate enrollment.
 
 name: Security Scan
@@ -24,7 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
-      - name: Run Trivy vulnerability scanner
+      - name: Run Trivy vulnerability scanner (JSON)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
         with:
           scan-type: 'fs'
@@ -33,13 +33,47 @@ jobs:
           output: 'trivy-summary.json'
           severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
           exit-code: '0'
+      - name: Generate CycloneDX SBOM
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
+        with:
+          scan-type: 'fs'
+          path: '.'
+          format: 'cyclonedx'
+          output: 'trivy-sbom.cdx.json'
+          exit-code: '0'
 
-      - name: Upload private Trivy results
+      - name: Redact Trivy reports
+        if: always()
+        run: |
+          set -euo pipefail
+          artifact_dir="$RUNNER_TEMP/trivy-artifact"
+          mkdir -p "$artifact_dir"
+          redact='walk(
+            if type == "object" then
+              with_entries(
+                if (.key | ascii_downcase | test("secret|match|password|token|authorization|private[_-]?key"))
+                then .value = "[REDACTED]"
+                else .
+                end
+              )
+            else .
+            end
+          )'
+          if [[ -s trivy-summary.json ]]; then
+            jq "$redact" trivy-summary.json > "$artifact_dir/trivy.redacted.json"
+          else
+            printf '%s\n' '{"scanner":"trivy","status":"not-run"}' > "$artifact_dir/trivy.redacted.json"
+          fi
+          if [[ -s trivy-sbom.cdx.json ]]; then
+            jq "$redact" trivy-sbom.cdx.json > "$artifact_dir/trivy.sbom.cdx.redacted.json"
+          fi
+
+      - name: Upload Trivy scan results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: trivy-scan-results
-          path: trivy-summary.json
+          path: ${{ runner.temp }}/trivy-artifact
           retention-days: 7
           if-no-files-found: error
 
@@ -96,9 +130,127 @@ jobs:
               echo "  No critical vulnerabilities found"
             fi
           else
-            echo "  BLOCKING: No trivy-summary.json found - scanner output is unavailable"
+            echo "  ERROR: No trivy-summary.json found - scanner failed"
             exit 1
           fi
 
           echo ""
           echo "Security scan completed"
+
+  osv:
+    name: OSV Dependency Scan
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      OSV_VERSION: 2.3.8
+      OSV_SHA256: bc98e15319ed0d515e3f9235287ba53cdc5535d576d24fd573978ecfe9ab92dc
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Install OSV-Scanner
+        run: |
+          set -euo pipefail
+          binary="$RUNNER_TEMP/osv-scanner"
+          curl --fail --silent --show-error --location \
+            "https://github.com/google/osv-scanner/releases/download/v${OSV_VERSION}/osv-scanner_linux_amd64" \
+            --output "$binary"
+          printf '%s  %s\n' "$OSV_SHA256" "$binary" | sha256sum --check --status
+          chmod 0755 "$binary"
+
+      - name: Scan dependencies
+        id: scan
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/osv-scanner" scan source -r "${{ github.workspace }}" \
+            --format json \
+            --output-file "$RUNNER_TEMP/osv.json"
+
+      - name: Redact report
+        if: always()
+        run: |
+          set -euo pipefail
+          if [[ -s "$RUNNER_TEMP/osv.json" ]]; then
+            jq '
+              walk(
+                if type == "object" then
+                  with_entries(
+                    if (.key | ascii_downcase | test("secret|match|password|token|authorization|private[_-]?key"))
+                    then .value = "[REDACTED]"
+                    else .
+                    end
+                  )
+                else .
+                end
+              )
+            ' "$RUNNER_TEMP/osv.json" > "$RUNNER_TEMP/osv.redacted.json"
+          else
+            printf '%s\n' '{"scanner":"osv","status":"not-run"}' > "$RUNNER_TEMP/osv.redacted.json"
+          fi
+
+      - name: Upload private report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: osv-scan-results
+          path: ${{ runner.temp }}/osv.redacted.json
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Enforce scanner execution
+        if: always()
+        run: test -s "$RUNNER_TEMP/osv.json"
+
+  iac:
+    name: Trivy IaC Scan
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Run Trivy IaC scanner (JSON)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
+        with:
+          scan-type: 'config'
+          hide-progress: true
+          format: 'json'
+          output: 'trivy-iac-summary.json'
+          severity: 'CRITICAL,HIGH'
+          scanners: 'misconfig'
+          exit-code: '0'
+
+      - name: Redact Trivy IaC report
+        if: always()
+        run: |
+          set -euo pipefail
+          if [[ -s trivy-iac-summary.json ]]; then
+            jq '
+              walk(
+                if type == "object" then
+                  with_entries(
+                    if (.key | ascii_downcase | test("secret|match|password|token|authorization|private[_-]?key"))
+                    then .value = "[REDACTED]"
+                    else .
+                    end
+                  )
+                else .
+                end
+              )
+            ' trivy-iac-summary.json > "$RUNNER_TEMP/trivy-iac.redacted.json"
+          else
+            printf '%s\n' '{"scanner":"trivy","scan_type":"config","status":"not-run"}' > "$RUNNER_TEMP/trivy-iac.redacted.json"
+          fi
+
+      - name: Upload Trivy IaC results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: trivy-iac-scan-results
+          path: ${{ runner.temp }}/trivy-iac.redacted.json
+          retention-days: 7
+          if-no-files-found: error
