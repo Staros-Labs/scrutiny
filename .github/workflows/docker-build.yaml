@@ -33,7 +33,7 @@ env:
 
 jobs:
   collector:
-    runs-on: ubuntu-latest
+    runs-on: zeus-docker
     timeout-minutes: 30
     permissions:
       contents: read
@@ -93,7 +93,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=docker-collector
 
   collector-omnibus:
-    runs-on: ubuntu-latest
+    runs-on: zeus-docker
     timeout-minutes: 30
     permissions:
       contents: read
@@ -153,7 +153,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=docker-collector-omnibus
 
   collector-zfs:
-    runs-on: ubuntu-latest
+    runs-on: zeus-docker
     timeout-minutes: 30
     permissions:
       contents: read
@@ -213,7 +213,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=docker-collector-zfs
 
   collector-mdadm:
-    runs-on: ubuntu-latest
+    runs-on: zeus-docker
     timeout-minutes: 30
     permissions:
       contents: read
@@ -273,7 +273,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=docker-collector-mdadm
 
   collector-btrfs:
-    runs-on: ubuntu-latest
+    runs-on: zeus-docker
     timeout-minutes: 30
     permissions:
       contents: read
@@ -333,7 +333,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=docker-collector-btrfs
 
   collector-performance:
-    runs-on: ubuntu-latest
+    runs-on: zeus-docker
     timeout-minutes: 30
     permissions:
       contents: read
@@ -393,7 +393,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=docker-collector-performance
 
   web:
-    runs-on: ubuntu-latest
+    runs-on: zeus-docker
     timeout-minutes: 30
     permissions:
       contents: read
@@ -454,7 +454,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=docker-web
 
   omnibus:
-    runs-on: ubuntu-latest
+    runs-on: zeus-docker
     timeout-minutes: 30
     permissions:
       contents: read
