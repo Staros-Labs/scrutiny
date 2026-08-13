@@ -110,7 +110,7 @@ func prepareAnalogJDeviceRepair(ctx context.Context, tx *gorm.DB) (map[string]st
 
 		targetWWN := strings.ToLower(originalWWN)
 		legacyWWN := originalWWN
-		if serial != "" && originalWWN == strings.ToLower(serial) {
+		if serial != "" && strings.EqualFold(originalWWN, serial) {
 			legacyWWN = ""
 		}
 		if err := addAnalogJLegacyMapping(mapping, legacyScrutinyUUID(device.ModelName, device.SerialNumber, legacyWWN), targetWWN); err != nil {
