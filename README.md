@@ -274,6 +274,9 @@ Branch channel tags follow the same pattern across images:
 
 Default CI image publishing currently builds:
 
+These trusted image build and publish jobs run on the `zeus-docker` self-hosted
+runner group. Security workflows retain their separate security runner lane.
+
 - `collector` for `linux/amd64`, `linux/arm64`, and `linux/arm/v7`
 - `collector-omnibus`, `web`, `collector-zfs`, `collector-mdadm`, `collector-btrfs`, and `collector-performance` for `linux/amd64` and `linux/arm64`
 
