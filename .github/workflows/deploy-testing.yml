@@ -23,7 +23,7 @@ env:
 jobs:
   build-and-publish:
     name: Build and Publish Testing
-    runs-on: zeus-docker
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout

@@ -36,6 +36,13 @@ The legacy `master-omnibus`, `master-web`, and `master-collector` tags still res
 
 They do not SSH to Zeus, join NetBird, or restart any remote stack.
 
+## CI Runner
+
+Image build and publish jobs use GitHub-hosted `ubuntu-latest` runners.
+Docker Buildx and QEMU produce the `linux/amd64`, `linux/arm64`, and
+`linux/arm/v7` image variants. Zeus is used only for host-side image rollout;
+it is not a GitHub Actions runner.
+
 ## Manual Release Workflow
 
 Production releases are created manually through `.github/workflows/release.yaml` via `workflow_dispatch`.
