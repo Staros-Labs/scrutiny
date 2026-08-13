@@ -10,6 +10,21 @@ Common causes:
 - controller or enclosure changes that affect the reported WWN
 - `smartmontools` upgrades that change how device identity is exposed
 
+## Migrating from AnalogJ/scrutiny 0.9.x
+
+AnalogJ/scrutiny 0.9.x stored SMART history under an incompatible
+`scrutiny_uuid` InfluxDB tag and cleared serial-based fallback WWNs. Direct
+migration to affected Staros releases could hide existing history and create a
+second row when an NVMe or SCSI collector ran.
+
+Migration `m20260803000000` repairs this state automatically when the SQLite
+`migrations` table contains `m20260216155600`. It restores current WWNs, merges
+an unambiguous duplicate while preserving user metadata, and rewrites
+`smart`/`temp` history in the daily, weekly, monthly, and yearly buckets.
+
+Do not change either legacy UUID namespace or its `model + serial + WWN`
+formula. Existing 0.9.x history cannot be matched after either value changes.
+
 ## How to find the device IDs
 
 Use the summary API and inspect the `device_id` values:

@@ -26,6 +26,8 @@ jobs:
             echo "Add it to the component's imports array, see webapp/frontend/src/app/shared/menu-trigger-restore-focus.directive.ts"
             exit 1
           fi
+      - name: Guard SVG icon references
+        run: npm --prefix webapp/frontend run test:icons
       - name: Test Frontend
         run: |
           make binary-frontend-test-coverage
@@ -74,11 +76,14 @@ jobs:
           go-version-file: go.mod
       - name: Sync vendor
         run: go mod vendor
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.4.0
-          args: --timeout=5m --new-from-rev=origin/${{ github.base_ref }}
+      - name: Install golangci-lint
+        run: |
+          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.4.0
+      - name: Lint Backend
+        run: |
+          "$(go env GOPATH)/bin/golangci-lint" run \
+            --timeout=5m \
+            --new-from-rev="origin/${{ github.base_ref }}"
 
   build:
     name: Build ${{ matrix.cfg.goos }}/${{ matrix.cfg.goarch }}
@@ -111,6 +116,8 @@ jobs:
       - name: Build Binaries
         run: |
           make binary-clean binary-all
+      - name: Package Collector Omnibus
+        run: make package-collector-omnibus
       - name: Archive
         uses: actions/upload-artifact@v7
         with:
@@ -118,7 +125,10 @@ jobs:
           path: |
             scrutiny-web-*
             scrutiny-collector-metrics-*
+            scrutiny-collector-mdadm-*
             scrutiny-collector-zfs-*
             scrutiny-collector-btrfs-*
             scrutiny-collector-performance-*
             scrutiny-collector-filesystem-*
+            scrutiny-collector-omnibus-*.tar.gz
+            scrutiny-collector-omnibus-*.zip

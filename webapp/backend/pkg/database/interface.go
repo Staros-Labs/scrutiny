@@ -49,6 +49,9 @@ type DeviceRepo interface {
 	UpdateDeviceMissedPingTimeout(ctx context.Context, deviceID string, timeoutMinutes int) error
 	MergeDevices(ctx context.Context, sourceDeviceID string, destinationDeviceID string) error
 	DeleteDevice(ctx context.Context, deviceID string) error
+	GetHosts(ctx context.Context) ([]models.HostSummary, error)
+	UpdateHostArchived(ctx context.Context, hostID string, archived bool) (int64, error)
+	PurgeHosts(ctx context.Context, hostIDs []string) ([]models.HostActionResult, error)
 	// RecalculateDeviceStatusFromHistory re-evaluates device status from stored SMART data
 	// with current overrides applied. Used when overrides are added/modified/deleted.
 	RecalculateDeviceStatusFromHistory(ctx context.Context, deviceID string) error
@@ -63,10 +66,12 @@ type DeviceRepo interface {
 	// for use in delta evaluation before writing a new submission.
 	GetLatestSmartSubmission(ctx context.Context, wwn string) ([]measurements.Smart, error)
 
-	SaveSmartTemperature(ctx context.Context, wwn string, deviceID string, collectorSmartData *collector.SmartInfo, retrieveSCTTemperatureHistory bool) error
+	SaveSmartTemperature(ctx context.Context, wwn string, deviceID string, collectorSmartData *collector.SmartInfo, retrieveSCTTemperatureHistory bool, storeTemperatureHistory bool) error
 
 	GetSummary(ctx context.Context) (map[string]*models.DeviceSummary, error)
+	GetSummaryPage(ctx context.Context, options models.DeviceSummaryPageOptions) (*models.DeviceSummaryPage, error)
 	GetSmartTemperatureHistory(ctx context.Context, durationKey string) (map[string][]measurements.SmartTemperature, error)
+	GetSmartTemperatureHistoryForDevices(ctx context.Context, durationKey string, deviceIDs []string) (map[string][]measurements.SmartTemperature, error)
 	SaveFilesystemSummary(ctx context.Context, payload models.FilesystemSummaryUpload) error
 	GetFilesystemSummary(ctx context.Context) (map[string][]models.FilesystemCapacity, map[string]*models.FilesystemHostStatus, error)
 
@@ -112,6 +117,7 @@ type DeviceRepo interface {
 	UpdateZFSPoolLabel(ctx context.Context, guid string, label string) error
 	DeleteZFSPool(ctx context.Context, guid string) error
 	GetZFSPoolsSummary(ctx context.Context) (map[string]*models.ZFSPool, error)
+	GetAllZFSPoolsSummary(ctx context.Context) (map[string]*models.ZFSPool, error)
 
 	// ZFS Pool metrics
 	SaveZFSPoolMetrics(ctx context.Context, pool models.ZFSPool) error

@@ -154,6 +154,21 @@ func (mr *MockDeviceRepoMockRecorder) GetAllOverridesForDisplay(ctx interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllOverridesForDisplay", reflect.TypeOf((*MockDeviceRepo)(nil).GetAllOverridesForDisplay), ctx)
 }
 
+// GetAllZFSPoolsSummary mocks base method.
+func (m *MockDeviceRepo) GetAllZFSPoolsSummary(ctx context.Context) (map[string]*models.ZFSPool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllZFSPoolsSummary", ctx)
+	ret0, _ := ret[0].(map[string]*models.ZFSPool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllZFSPoolsSummary indicates an expected call of GetAllZFSPoolsSummary.
+func (mr *MockDeviceRepoMockRecorder) GetAllZFSPoolsSummary(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllZFSPoolsSummary", reflect.TypeOf((*MockDeviceRepo)(nil).GetAllZFSPoolsSummary), ctx)
+}
+
 // GetAttributeOverrideByID mocks base method.
 func (m *MockDeviceRepo) GetAttributeOverrideByID(ctx context.Context, id uint) (*models.AttributeOverride, error) {
 	m.ctrl.T.Helper()
@@ -365,6 +380,21 @@ func (mr *MockDeviceRepoMockRecorder) GetFilesystemSummary(ctx interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFilesystemSummary", reflect.TypeOf((*MockDeviceRepo)(nil).GetFilesystemSummary), ctx)
 }
 
+// GetHosts mocks base method.
+func (m *MockDeviceRepo) GetHosts(ctx context.Context) ([]models.HostSummary, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetHosts", ctx)
+	ret0, _ := ret[0].([]models.HostSummary)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetHosts indicates an expected call of GetHosts.
+func (mr *MockDeviceRepoMockRecorder) GetHosts(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHosts", reflect.TypeOf((*MockDeviceRepo)(nil).GetHosts), ctx)
+}
+
 // GetLatestMdadmMetrics mocks base method.
 func (m *MockDeviceRepo) GetLatestMdadmMetrics(ctx context.Context, uuid string) (*measurements.MDADMMetrics, error) {
 	m.ctrl.T.Helper()
@@ -574,6 +604,21 @@ func (mr *MockDeviceRepoMockRecorder) GetSmartTemperatureHistory(ctx, durationKe
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSmartTemperatureHistory", reflect.TypeOf((*MockDeviceRepo)(nil).GetSmartTemperatureHistory), ctx, durationKey)
 }
 
+// GetSmartTemperatureHistoryForDevices mocks base method.
+func (m *MockDeviceRepo) GetSmartTemperatureHistoryForDevices(ctx context.Context, durationKey string, deviceIDs []string) (map[string][]measurements.SmartTemperature, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSmartTemperatureHistoryForDevices", ctx, durationKey, deviceIDs)
+	ret0, _ := ret[0].(map[string][]measurements.SmartTemperature)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSmartTemperatureHistoryForDevices indicates an expected call of GetSmartTemperatureHistoryForDevices.
+func (mr *MockDeviceRepoMockRecorder) GetSmartTemperatureHistoryForDevices(ctx, durationKey, deviceIDs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSmartTemperatureHistoryForDevices", reflect.TypeOf((*MockDeviceRepo)(nil).GetSmartTemperatureHistoryForDevices), ctx, durationKey, deviceIDs)
+}
+
 // GetSummary mocks base method.
 func (m *MockDeviceRepo) GetSummary(ctx context.Context) (map[string]*models.DeviceSummary, error) {
 	m.ctrl.T.Helper()
@@ -587,6 +632,21 @@ func (m *MockDeviceRepo) GetSummary(ctx context.Context) (map[string]*models.Dev
 func (mr *MockDeviceRepoMockRecorder) GetSummary(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSummary", reflect.TypeOf((*MockDeviceRepo)(nil).GetSummary), ctx)
+}
+
+// GetSummaryPage mocks base method.
+func (m *MockDeviceRepo) GetSummaryPage(ctx context.Context, options models.DeviceSummaryPageOptions) (*models.DeviceSummaryPage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSummaryPage", ctx, options)
+	ret0, _ := ret[0].(*models.DeviceSummaryPage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSummaryPage indicates an expected call of GetSummaryPage.
+func (mr *MockDeviceRepoMockRecorder) GetSummaryPage(ctx, options interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSummaryPage", reflect.TypeOf((*MockDeviceRepo)(nil).GetSummaryPage), ctx, options)
 }
 
 // GetWorkloadInsights mocks base method.
@@ -706,6 +766,21 @@ func (m *MockDeviceRepo) MergeDevices(ctx context.Context, sourceDeviceID, desti
 func (mr *MockDeviceRepoMockRecorder) MergeDevices(ctx, sourceDeviceID, destinationDeviceID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeDevices", reflect.TypeOf((*MockDeviceRepo)(nil).MergeDevices), ctx, sourceDeviceID, destinationDeviceID)
+}
+
+// PurgeHosts mocks base method.
+func (m *MockDeviceRepo) PurgeHosts(ctx context.Context, hostIDs []string) ([]models.HostActionResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PurgeHosts", ctx, hostIDs)
+	ret0, _ := ret[0].([]models.HostActionResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PurgeHosts indicates an expected call of PurgeHosts.
+func (mr *MockDeviceRepoMockRecorder) PurgeHosts(ctx, hostIDs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PurgeHosts", reflect.TypeOf((*MockDeviceRepo)(nil).PurgeHosts), ctx, hostIDs)
 }
 
 // RecalculateDeviceStatusFromHistory mocks base method.
@@ -907,17 +982,17 @@ func (mr *MockDeviceRepoMockRecorder) SaveSmartAttributes(ctx, wwn, collectorSma
 }
 
 // SaveSmartTemperature mocks base method.
-func (m *MockDeviceRepo) SaveSmartTemperature(ctx context.Context, wwn, deviceID string, collectorSmartData *collector.SmartInfo, retrieveSCTTemperatureHistory bool) error {
+func (m *MockDeviceRepo) SaveSmartTemperature(ctx context.Context, wwn, deviceID string, collectorSmartData *collector.SmartInfo, retrieveSCTTemperatureHistory, storeTemperatureHistory bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveSmartTemperature", ctx, wwn, deviceID, collectorSmartData, retrieveSCTTemperatureHistory)
+	ret := m.ctrl.Call(m, "SaveSmartTemperature", ctx, wwn, deviceID, collectorSmartData, retrieveSCTTemperatureHistory, storeTemperatureHistory)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SaveSmartTemperature indicates an expected call of SaveSmartTemperature.
-func (mr *MockDeviceRepoMockRecorder) SaveSmartTemperature(ctx, wwn, deviceID, collectorSmartData, retrieveSCTTemperatureHistory interface{}) *gomock.Call {
+func (mr *MockDeviceRepoMockRecorder) SaveSmartTemperature(ctx, wwn, deviceID, collectorSmartData, retrieveSCTTemperatureHistory, storeTemperatureHistory interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSmartTemperature", reflect.TypeOf((*MockDeviceRepo)(nil).SaveSmartTemperature), ctx, wwn, deviceID, collectorSmartData, retrieveSCTTemperatureHistory)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSmartTemperature", reflect.TypeOf((*MockDeviceRepo)(nil).SaveSmartTemperature), ctx, wwn, deviceID, collectorSmartData, retrieveSCTTemperatureHistory, storeTemperatureHistory)
 }
 
 // SaveZFSPoolMetrics mocks base method.
@@ -1116,6 +1191,21 @@ func (m *MockDeviceRepo) UpdateDeviceStatus(ctx context.Context, deviceID string
 func (mr *MockDeviceRepoMockRecorder) UpdateDeviceStatus(ctx, deviceID, status interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDeviceStatus", reflect.TypeOf((*MockDeviceRepo)(nil).UpdateDeviceStatus), ctx, deviceID, status)
+}
+
+// UpdateHostArchived mocks base method.
+func (m *MockDeviceRepo) UpdateHostArchived(ctx context.Context, hostID string, archived bool) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateHostArchived", ctx, hostID, archived)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateHostArchived indicates an expected call of UpdateHostArchived.
+func (mr *MockDeviceRepoMockRecorder) UpdateHostArchived(ctx, hostID, archived interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateHostArchived", reflect.TypeOf((*MockDeviceRepo)(nil).UpdateHostArchived), ctx, hostID, archived)
 }
 
 // UpdateMdadmArrayArchived mocks base method.

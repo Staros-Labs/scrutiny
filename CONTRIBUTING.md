@@ -26,6 +26,10 @@ We use a Gitflow-style workflow:
 4. Update `README.md` when your change affects the top-level product surface, feature set, supported deployment paths, or published image matrix
 5. Submit a PR to `develop` (or `master` for hotfixes)
 
+### PR Description Automation
+
+`.github/workflows/auto-pr-description.yaml` fills an empty PR body when the PR is opened. It preserves author-written descriptions. Keep `platisd/openai-pr-description` pinned to an approved release commit covered by the organization Actions allowlist. After changing the action or allowlist, test an empty-body PR; a PR with a body skips the job before action resolution and cannot prove the reference works.
+
 ### Loop Pilot Workflows
 
 This repo also has read-only and draft-only loop pilot workflows on `master`.
@@ -39,6 +43,7 @@ This repo also has read-only and draft-only loop pilot workflows on `master`.
 - No emojis in code, commits, comments, or documentation
 - Follow existing code patterns and formatting
 - Run linting before submitting: `npm run lint` (frontend)
+- Backend CI installs `golangci-lint` v2.4.0 directly through the Go toolchain because the organization Actions policy restricts third-party wrappers. Keep the pinned version in `.github/workflows/ci.yaml` unless that policy changes.
 
 ## Project Structure
 
@@ -119,6 +124,13 @@ Frontend code should treat application config as available immediately from defa
 - Keep defensive guards in route/layout code anyway. Router and media observers can still fire before a component finishes its own local initialization.
 
 This avoids startup races where layout or theme code reads `config.layout` before the initial settings request completes.
+
+## Frontend temperature chart tooltip rule
+
+- **Problem:** ApexCharts hides shared-tooltip rows whose aligned value is `null`, even when `tooltip.hideEmptySeries` is `false`. The fixed data panel then changes height while the pointer moves between timestamps.
+- **Approach:** Keep timestamp-aligned series padded with `null`, then render one custom tooltip row per visible series and show `--` for a missing reading.
+- **Dead ends:** Do not carry values forward, widen timestamp matching, or rely on `hideEmptySeries`. Those options either change recorded data or still hide `null` rows.
+- **Rule:** Any shared tooltip over null-padded aligned series must keep its visible-series row set stable across adjacent timestamps.
 
 # Modifying both Scrutiny Backend and Frontend Applications
 If you're developing a feature that requires changes to the backend and the frontend, or a frontend feature that requires real data,

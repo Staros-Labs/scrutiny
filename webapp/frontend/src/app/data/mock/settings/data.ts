@@ -1,4 +1,5 @@
 export const settings = {
+    zfs_pool_modifications_allowed: true,
     settings: {
         theme: 'light',
         layout: 'material',

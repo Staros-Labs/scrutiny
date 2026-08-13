@@ -7,10 +7,43 @@ import (
 
 type DeviceSummaryWrapper struct {
 	Data struct {
-		Summary map[string]*DeviceSummary `json:"summary"`
+		Summary    map[string]*DeviceSummary `json:"summary"`
+		Pagination *PaginationMetadata       `json:"pagination,omitempty"`
 	} `json:"data"`
 	Errors  []error `json:"errors"`
 	Success bool    `json:"success"`
+}
+
+type PaginationMetadata struct {
+	Page           int `json:"page"`
+	PageSize       int `json:"page_size"`
+	TotalItems     int `json:"total_items"`
+	TotalPages     int `json:"total_pages"`
+	AttentionCount int `json:"attention_count"`
+}
+
+type DeviceSummaryPageOptions struct {
+	Sort        string
+	Display     string
+	HostSearch  string
+	Page        int
+	PageSize    int
+	Archived    bool
+	GroupByHost bool
+}
+
+type DeviceSummaryPage struct {
+	Summary    map[string]*DeviceSummary
+	Pagination PaginationMetadata
+}
+
+type TemperatureDeviceOption struct {
+	DeviceID     string `json:"device_id"`
+	HostID       string `json:"host_id"`
+	Label        string `json:"label"`
+	DeviceName   string `json:"device_name"`
+	ModelName    string `json:"model_name"`
+	SerialNumber string `json:"serial_number"`
 }
 
 type DeviceSummary struct {

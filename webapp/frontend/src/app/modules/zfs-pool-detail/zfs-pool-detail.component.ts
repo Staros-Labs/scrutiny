@@ -165,21 +165,21 @@ export class ZFSPoolDetailComponent implements OnInit, OnDestroy {
         switch (type) {
             case 'disk':
             case 'file':
-                return 'heroicons_outline:server';
+                return 'heroicons_outline:desktop-computer';
             case 'mirror':
                 return 'heroicons_outline:document-duplicate';
             case 'raidz1':
             case 'raidz2':
             case 'raidz3':
-                return 'heroicons_outline:database';
+                return 'heroicons_outline:collection';
             case 'spare':
                 return 'heroicons_outline:shield-check';
             case 'log':
-                return 'heroicons_outline:document-text';
+                return 'heroicons_outline:document';
             case 'cache':
                 return 'heroicons_outline:lightning-bolt';
             default:
-                return 'heroicons_outline:server';
+                return 'heroicons_outline:desktop-computer';
         }
     }
 

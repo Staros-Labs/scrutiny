@@ -434,6 +434,10 @@ func (sr *scrutinyRepository) ensureRetentionBucket(ctx context.Context, org *do
 
 // get a map of all devices and associated SMART data
 func (sr *scrutinyRepository) GetSummary(ctx context.Context) (map[string]*models.DeviceSummary, error) {
+	return sr.getSummary(ctx, true)
+}
+
+func (sr *scrutinyRepository) getSummary(ctx context.Context, includeTemperatureHistory bool) (map[string]*models.DeviceSummary, error) {
 	devices, err := sr.GetDevices(ctx)
 	if err != nil {
 		return nil, err
@@ -460,7 +464,9 @@ func (sr *scrutinyRepository) GetSummary(ctx context.Context) (map[string]*model
 		sr.logger.Errorf("Query error: %s", result.Err().Error())
 	}
 
-	sr.attachTemperatureHistory(ctx, summaries)
+	if includeTemperatureHistory {
+		sr.attachTemperatureHistory(ctx, summaries)
+	}
 
 	return summaries, nil
 }

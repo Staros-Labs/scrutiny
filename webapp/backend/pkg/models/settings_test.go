@@ -20,6 +20,7 @@ func TestApplyDefaults_AllZeroValues(t *testing.T) {
 	require.Equal(t, "smooth", s.LineStroke)
 	require.Equal(t, "humanize", s.PoweredOnHoursUnit)
 	require.Equal(t, 2, s.DashboardColumns)
+	require.Equal(t, 25, s.DashboardPageSize)
 
 	// Metrics numeric defaults
 	require.Equal(t, 2, s.Metrics.NotifyLevel)

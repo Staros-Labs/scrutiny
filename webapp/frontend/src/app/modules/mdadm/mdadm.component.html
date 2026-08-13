@@ -3,7 +3,7 @@
     <div class="flex flex-col sm:flex-row flex-0 sm:items-center sm:justify-between p-6 sm:py-8 sm:px-10 border-b bg-card dark:bg-transparent">
         <div class="flex-1 min-w-0">
             <div class="flex items-center">
-                <mat-icon class="icon-size-5 text-secondary" [svgIcon]="'heroicons_solid:database'"></mat-icon>
+                <mat-icon class="icon-size-5 text-secondary" [svgIcon]="'heroicons_solid:collection'"></mat-icon>
                 <div class="ml-2 text-secondary font-medium uppercase tracking-wider">MDADM RAID</div>
             </div>
             <div class="mt-2">
@@ -29,7 +29,7 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
                                 <div class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900">
-                                    <mat-icon class="text-blue-600 dark:text-blue-400" [svgIcon]="'heroicons_outline:database'"></mat-icon>
+                                    <mat-icon class="text-blue-600 dark:text-blue-400" [svgIcon]="'heroicons_outline:collection'"></mat-icon>
                                 </div>
                                 <div class="ml-4 truncate">
                                     <div class="text-lg font-bold leading-none truncate">{{ array.label || array.name }}</div>
@@ -97,7 +97,7 @@
         <!-- No data template -->
         @if (arrays.length === 0) {
         <div class="flex flex-col items-center justify-center h-full p-12">
-            <mat-icon class="icon-size-24 text-secondary" [svgIcon]="'heroicons_outline:database'"></mat-icon>
+            <mat-icon class="icon-size-24 text-secondary" [svgIcon]="'heroicons_outline:collection'"></mat-icon>
             <h1 class="mt-8 text-2xl font-bold tracking-tight text-secondary">No MDADM arrays found</h1>
             <p class="mt-2 text-lg text-secondary">Ensure the MDADM collector is running and correctly configured.</p>
         </div>

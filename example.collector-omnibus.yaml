@@ -1,0 +1,52 @@
+# Standalone collector omnibus manager configuration.
+#
+# Run:
+#   scrutiny-collector-omnibus run --config /path/to/collector-omnibus.yaml
+#
+# Paths are resolved relative to this file. Environment variables override
+# these values; see docs/INSTALL_COLLECTOR_OMNIBUS.md for the full mapping.
+
+binary_dir: ../bin
+
+collectors:
+  metrics:
+    enabled: true
+    schedule: "0 0 * * *"
+    run_on_startup: false
+    startup_sleep_secs: 0
+    config: ./collector.yaml
+
+  zfs:
+    enabled: false
+    schedule: "*/15 * * * *"
+    run_on_startup: false
+    startup_sleep_secs: 0
+    config: ./collector-zfs.yaml
+
+  mdadm:
+    enabled: false
+    schedule: "*/15 * * * *"
+    run_on_startup: false
+    startup_sleep_secs: 0
+    config: ./collector.yaml
+
+  btrfs:
+    enabled: false
+    schedule: "*/15 * * * *"
+    run_on_startup: false
+    startup_sleep_secs: 0
+    config: ./collector-btrfs.yaml
+
+  filesystem:
+    enabled: false
+    schedule: "*/15 * * * *"
+    run_on_startup: false
+    startup_sleep_secs: 0
+    config: ./collector.yaml
+
+  performance:
+    enabled: false
+    schedule: "0 2 * * 0"
+    run_on_startup: false
+    startup_sleep_secs: 0
+    config: ./collector-performance.yaml

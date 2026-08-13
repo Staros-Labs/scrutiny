@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,7 +15,10 @@ import (
 // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Temperature Data
 // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-func (sr *scrutinyRepository) SaveSmartTemperature(ctx context.Context, wwn string, deviceID string, collectorSmartData *collector.SmartInfo, retrieveSCTTemperatureHistory bool) error {
+func (sr *scrutinyRepository) SaveSmartTemperature(ctx context.Context, wwn string, deviceID string, collectorSmartData *collector.SmartInfo, retrieveSCTTemperatureHistory bool, storeTemperatureHistory bool) error {
+	if !storeTemperatureHistory {
+		return nil
+	}
 	if len(collectorSmartData.AtaSctTemperatureHistory.Table) > 0 && retrieveSCTTemperatureHistory {
 
 		for ndx, temp := range collectorSmartData.AtaSctTemperatureHistory.Table {
@@ -62,20 +66,44 @@ func (sr *scrutinyRepository) SaveSmartTemperature(ctx context.Context, wwn stri
 }
 
 func (sr *scrutinyRepository) GetSmartTemperatureHistory(ctx context.Context, durationKey string) (map[string][]measurements.SmartTemperature, error) {
+	return sr.getSmartTemperatureHistory(ctx, durationKey, nil)
+}
+
+func (sr *scrutinyRepository) GetSmartTemperatureHistoryForDevices(ctx context.Context, durationKey string, deviceIDs []string) (map[string][]measurements.SmartTemperature, error) {
+	return sr.getSmartTemperatureHistory(ctx, durationKey, deviceIDs)
+}
+
+func (sr *scrutinyRepository) getSmartTemperatureHistory(ctx context.Context, durationKey string, deviceIDs []string) (map[string][]measurements.SmartTemperature, error) {
 	//we can get temp history for "week", "month", DURATION_KEY_YEAR, "forever"
 
 	// Build WWN-to-DeviceID map for re-keying InfluxDB results
 	devices, devErr := sr.GetDevices(ctx)
+	if devErr != nil && len(deviceIDs) > 0 {
+		return nil, fmt.Errorf("failed to resolve selected temperature devices: %w", devErr)
+	}
 	wwnToDeviceID := map[string]string{}
+	selectedIDs := map[string]struct{}{}
+	for _, deviceID := range deviceIDs {
+		selectedIDs[deviceID] = struct{}{}
+	}
+	selectedWWNs := make([]string, 0, len(selectedIDs))
 	if devErr == nil {
 		for i := range devices {
-			wwnToDeviceID[devices[i].WWN] = devices[i].DeviceID
+			if len(selectedIDs) == 0 {
+				wwnToDeviceID[devices[i].WWN] = devices[i].DeviceID
+			} else if _, selected := selectedIDs[devices[i].DeviceID]; selected {
+				wwnToDeviceID[devices[i].WWN] = devices[i].DeviceID
+				selectedWWNs = append(selectedWWNs, devices[i].WWN)
+			}
 		}
 	}
 
 	deviceTempHistory := map[string][]measurements.SmartTemperature{}
+	if len(deviceIDs) > 0 && len(selectedWWNs) == 0 {
+		return deviceTempHistory, nil
+	}
 
-	queryStr := sr.aggregateTempQuery(durationKey)
+	queryStr := sr.aggregateTempQuery(durationKey, selectedWWNs...)
 
 	result, err := sr.influxQueryApi.Query(ctx, queryStr)
 	if err != nil {
@@ -124,7 +152,7 @@ func appendTempRecord(deviceTempHistory map[string][]measurements.SmartTemperatu
 // Helper Methods
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (sr *scrutinyRepository) aggregateTempQuery(durationKey string) string {
+func (sr *scrutinyRepository) aggregateTempQuery(durationKey string, deviceWWNs ...string) string {
 
 	/*
 		import "influxdata/influxdb/schema"
@@ -166,6 +194,13 @@ func (sr *scrutinyRepository) aggregateTempQuery(durationKey string) string {
 			fmt.Sprintf(`%sData = from(bucket: "%s")`, nestedDurationKey, bucketName),
 			fmt.Sprintf(`|> range(start: %s, stop: %s)`, durationRange[0], durationRange[1]),
 			`|> filter(fn: (r) => r["_measurement"] == "temp" )`,
+		}
+		if len(deviceWWNs) > 0 {
+			quotedWWNs := make([]string, 0, len(deviceWWNs))
+			for _, wwn := range deviceWWNs {
+				quotedWWNs = append(quotedWWNs, strconv.Quote(wwn))
+			}
+			subQuery = append(subQuery, fmt.Sprintf(`|> filter(fn: (r) => contains(value: r["device_wwn"], set: [%s]))`, strings.Join(quotedWWNs, ", ")))
 		}
 		if durationResolution != "" {
 			subQuery = append(subQuery,
