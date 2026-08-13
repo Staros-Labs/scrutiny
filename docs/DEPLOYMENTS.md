@@ -47,6 +47,10 @@ it is not a GitHub Actions runner.
 
 Production releases are created manually through `.github/workflows/release.yaml` via `workflow_dispatch`.
 
+The release job installs exact versions from the root package-lock.json with
+npm ci, then runs .github/scripts/run-semantic-release.mjs. Update
+package.json and package-lock.json together when changing release tooling.
+
 - Semantic versioning still comes from conventional commits and `semantic-release`.
 - Raw release notes are generated deterministically from merged pull requests between the previous tag and the new tag.
 - The generator uses merged PR metadata as the source of truth, renders note content from each PR's `## Summary` block plus linked issues, and validates that no extracted summary items were dropped before it emits notes.
