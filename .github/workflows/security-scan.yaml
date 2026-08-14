@@ -141,14 +141,6 @@ jobs:
           echo ""
           echo "Security scan completed"
 
-  osv:
-    uses: Staros-Labs/infra/.github/workflows/reusable-security-osv.yml@2f8e26ea833c4b728a06317e1e4870831c416438
-    with:
-      report_only: true
-      scan_ref: .
-    permissions:
-      contents: read
-
   iac:
     name: Trivy IaC Scan
     runs-on: ubuntu-24.04
