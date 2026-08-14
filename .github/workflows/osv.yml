@@ -1,0 +1,84 @@
+name: osv
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  osv:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      OSV_VERSION: 2.3.8
+      OSV_SHA256: bc98e15319ed0d515e3f9235287ba53cdc5535d576d24fd573978ecfe9ab92dc
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Install OSV-Scanner
+        run: |
+          set -euo pipefail
+          binary="$RUNNER_TEMP/osv-scanner"
+          curl --fail --silent --show-error --location \
+            "https://github.com/google/osv-scanner/releases/download/v${OSV_VERSION}/osv-scanner_linux_amd64" \
+            --output "$binary"
+          printf '%s  %s\n' "$OSV_SHA256" "$binary" | sha256sum --check --status
+          chmod 0755 "$binary"
+
+      - name: Scan dependencies
+        id: scan
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/osv-scanner" scan source -r "${{ github.workspace }}" \
+            --format json \
+            --output-file "$RUNNER_TEMP/osv.json"
+
+      - name: Redact report
+        if: always()
+        run: |
+          set -euo pipefail
+          if [[ -s "$RUNNER_TEMP/osv.json" ]]; then
+            jq '
+              walk(
+                if type == "object" then
+                  with_entries(
+                    if (.key | ascii_downcase | test("secret|match|password|token|authorization|private[_-]?key"))
+                    then .value = "[REDACTED]"
+                    else .
+                    end
+                  )
+                else .
+                end
+              )
+            ' "$RUNNER_TEMP/osv.json" > "$RUNNER_TEMP/osv.redacted.json"
+          else
+            printf '%s\n' '{"scanner":"osv","status":"not-run"}' > "$RUNNER_TEMP/osv.redacted.json"
+          fi
+
+      - name: Upload private report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: osv-scan-results
+          path: ${{ runner.temp }}/osv.redacted.json
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Enforce scanner execution
+        if: always()
+        run: test -s "$RUNNER_TEMP/osv.json"
