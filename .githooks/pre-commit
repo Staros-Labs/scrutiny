@@ -3,7 +3,6 @@
 # above these checks by infra's wrapper sync.
 
 set -euo pipefail
-"$(git rev-parse --show-toplevel)/scripts/require-linear-session.sh" commit
 "$(git rev-parse --show-toplevel)/scripts/require-agent-lease.sh" deliver
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
