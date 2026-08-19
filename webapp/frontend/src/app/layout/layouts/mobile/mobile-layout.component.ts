@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -16,6 +16,7 @@ import { CdkScrollable } from '@angular/cdk/scrolling';
     templateUrl: './mobile-layout.component.html',
     styleUrls: ['./mobile-layout.component.scss'],
     encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [RouterLink, ThemeToggleComponent, MatIconButton, MatTooltip, MatIcon, RouterOutlet, MobileTabBarComponent, CdkScrollable],
 })
 export class MobileLayoutComponent implements OnInit, OnDestroy {

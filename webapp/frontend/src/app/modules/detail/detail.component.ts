@@ -1,5 +1,5 @@
 import humanizeDuration from 'humanize-duration';
-import { AfterViewInit, Component, LOCALE_ID, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, Component, LOCALE_ID, OnDestroy, OnInit, ViewChild, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Location, formatDate, NgClass, UpperCasePipe, DecimalPipe, PercentPipe } from '@angular/common';
 import { ApexOptions, ChartComponent } from 'ng-apexcharts';
 import { AppConfig } from 'app/core/config/app.config';
@@ -75,6 +75,7 @@ const AttributeStatusFailedScrutiny = 4;
             transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
         ]),
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         MatIconButton,
         MatIcon,

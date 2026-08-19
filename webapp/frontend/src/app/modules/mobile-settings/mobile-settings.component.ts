@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, inject } from '@angular/core';
+import { Component, ViewEncapsulation, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { DashboardSettingsComponent } from 'app/layout/common/dashboard-settings/dashboard-settings.component';
 import { versionInfo } from 'environments/versions';
@@ -11,6 +11,7 @@ import { RouterLink } from '@angular/router';
     templateUrl: './mobile-settings.component.html',
     styleUrls: ['./mobile-settings.component.scss'],
     encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [MatButton, MatIcon, RouterLink],
 })
 export class MobileSettingsComponent {
