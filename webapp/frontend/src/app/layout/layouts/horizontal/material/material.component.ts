@@ -1,4 +1,4 @@
-import { Component, HostBinding, OnDestroy, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { Component, HostBinding, OnDestroy, OnInit, ViewEncapsulation, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Data, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -20,6 +20,7 @@ import { MaterialLayoutModule } from './material.module';
     templateUrl: './material.component.html',
     styleUrls: ['./material.component.scss'],
     encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [TreoVerticalNavigationComponent, RouterLink, RouterLinkActive, ThemeToggleComponent, MatIconButton, MatTooltip, MatIcon, RouterOutlet, MaterialLayoutModule],
 })
 export class MaterialLayoutComponent implements OnInit, OnDestroy {

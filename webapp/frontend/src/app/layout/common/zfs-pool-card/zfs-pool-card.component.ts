@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { Subject } from 'rxjs';
@@ -20,6 +20,7 @@ import { FileSizePipe } from '../../../shared/file-size.pipe';
     selector: 'app-zfs-pool-card',
     templateUrl: './zfs-pool-card.component.html',
     styleUrls: ['./zfs-pool-card.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [NgClass, MatIcon, RouterLink, MatIconButton, MatMenuTrigger, MenuTriggerRestoreFocusDirective, MatMenu, MatMenuItem, DatePipe, FileSizePipe],
 })
 export class ZFSPoolCardComponent {
