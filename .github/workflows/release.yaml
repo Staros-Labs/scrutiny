@@ -28,13 +28,13 @@ jobs:
       new_release_version: ${{ steps.semantic.outputs.new_release_version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 24.15.0
       - name: Install release dependencies
@@ -147,13 +147,13 @@ jobs:
           - { on: windows-latest, goos: windows, goarch: arm64 }
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           ref: v${{ needs.release.outputs.new_release_version }}
       # Build from the published release tag so the binaries embed the same
       # VERSION constant that semantic-release committed for that release.
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: Build Binaries

@@ -98,7 +98,11 @@
                         <div [class.text-yellow-500]="isCollectorOutdated()">
                             {{ device?.collector_version }}
                             @if (isCollectorOutdated()) {
-                            <mat-icon class="text-sm align-middle ml-1" [svgIcon]="'warning'" [matTooltip]="'Collector is outdated. Server version: ' + config?.server_version">
+                            <mat-icon
+                                class="text-sm align-middle ml-1"
+                                [svgIcon]="'warning'"
+                                [matTooltip]="'Collector is outdated. Server version: ' + $safeNavigationMigration(config?.server_version)"
+                            >
                             </mat-icon>
                             }
                         </div>
@@ -116,7 +120,7 @@
                     </div>
                     } @if (device?.device_type && device?.device_type !== 'ata' && device?.device_type !== 'scsi') {
                     <div class="my-2 col-span-1">
-                        <div>{{ device?.device_type | uppercase }}</div>
+                        <div>{{ $safeNavigationMigration(device?.device_type) | uppercase }}</div>
                         <div class="text-secondary text-md">Device Type</div>
                     </div>
                     } @if (device?.manufacturer) {
@@ -142,7 +146,7 @@
                         <div class="text-secondary text-md">Firmware Version</div>
                     </div>
                     <div class="my-2 col-span-1">
-                        <div>{{ device?.capacity | fileSize : config.file_size_si_units }}</div>
+                        <div>{{ $safeNavigationMigration(device?.capacity) | fileSize : config.file_size_si_units }}</div>
                         <div class="text-secondary text-md">Capacity</div>
                     </div>
                     @if (device?.rotational_speed) {
@@ -162,14 +166,21 @@
                     </div>
                     @if (smart_results[0]?.power_on_hours) {
                     <div class="my-2 col-span-1">
-                        <div matTooltip="{{ humanizeDuration(smart_results[0]?.power_on_hours * 60 * 60 * 1000, { conjunction: ' and ', serialComma: false }) }}">
-                            {{ smart_results[0]?.power_on_hours | deviceHours : config.powered_on_hours_unit : { round: true, largest: 1, units: ['y', 'd', 'h'] } }}
+                        <div
+                            matTooltip="{{
+                                humanizeDuration($safeNavigationMigration(smart_results[0]?.power_on_hours) * 60 * 60 * 1000, { conjunction: ' and ', serialComma: false })
+                            }}"
+                        >
+                            {{
+                                $safeNavigationMigration(smart_results[0]?.power_on_hours)
+                                    | deviceHours : config.powered_on_hours_unit : { round: true, largest: 1, units: ['y', 'd', 'h'] }
+                            }}
                         </div>
                         <div class="text-secondary text-md">Powered On</div>
                     </div>
                     }
                     <div class="my-2 col-span-1">
-                        <div>{{ smart_results[0]?.temp | temperature : config.temperature_unit : true }}</div>
+                        <div>{{ $safeNavigationMigration(smart_results[0]?.temp) | temperature : config.temperature_unit : true }}</div>
                         <div class="text-secondary text-md">Temperature</div>
                     </div>
                     @if (getSSDPercentageUsed() !== null) {
@@ -190,7 +201,11 @@
                     }
                     <div class="my-2 col-span-1">
                         <div class="flex items-center gap-2">
-                            <span>{{ device?.max_tbw !== null && device?.max_tbw !== undefined ? (device.max_tbw | number : '1.0-2') + ' TB' : 'Not set' }}</span>
+                            <span>{{
+                                $safeNavigationMigration(device?.max_tbw) !== null && $safeNavigationMigration(device?.max_tbw) !== undefined
+                                    ? (device.max_tbw | number : '1.0-2') + ' TB'
+                                    : 'Not set'
+                            }}</span>
                             <button mat-stroked-button type="button" (click)="updateMaxTBW(); $event.stopPropagation()">Set</button>
                         </div>
                         <div class="text-secondary text-md">Rated TBW</div>
@@ -835,8 +850,9 @@
                     @if (latest.seq_read_bw_bytes > 0) {
                     <treo-card class="flex-col p-4">
                         <div class="font-semibold text-xs text-hint uppercase tracking-wider">Seq Read</div>
-                        <div class="font-bold text-2xl my-2">{{ latest.seq_read_bw_bytes | fileSize : config?.file_size_si_units }}/s</div>
-                        @if (performanceBaseline?.sample_count > 1) { @if (getBaselineDelta(latest.seq_read_bw_bytes, performanceBaseline?.seq_read_bw_bytes, true); as delta) {
+                        <div class="font-bold text-2xl my-2">{{ latest.seq_read_bw_bytes | fileSize : $safeNavigationMigration(config?.file_size_si_units) }}/s</div>
+                        @if (performanceBaseline?.sample_count > 1) { @if (getBaselineDelta(latest.seq_read_bw_bytes,
+                        $safeNavigationMigration(performanceBaseline?.seq_read_bw_bytes), true); as delta) {
                         <div class="text-xs text-hint">
                             <span [ngClass]="{ 'text-green-600': delta.status === 'good', 'text-yellow-600': delta.status === 'warn', 'text-red-600': delta.status === 'bad' }">
                                 {{ delta.percent > 0 ? '+' : '' }}{{ delta.percent }}%
@@ -848,8 +864,9 @@
                     } @if (latest.seq_write_bw_bytes > 0) {
                     <treo-card class="flex-col p-4">
                         <div class="font-semibold text-xs text-hint uppercase tracking-wider">Seq Write</div>
-                        <div class="font-bold text-2xl my-2">{{ latest.seq_write_bw_bytes | fileSize : config?.file_size_si_units }}/s</div>
-                        @if (performanceBaseline?.sample_count > 1) { @if (getBaselineDelta(latest.seq_write_bw_bytes, performanceBaseline?.seq_write_bw_bytes, true); as delta) {
+                        <div class="font-bold text-2xl my-2">{{ latest.seq_write_bw_bytes | fileSize : $safeNavigationMigration(config?.file_size_si_units) }}/s</div>
+                        @if (performanceBaseline?.sample_count > 1) { @if (getBaselineDelta(latest.seq_write_bw_bytes,
+                        $safeNavigationMigration(performanceBaseline?.seq_write_bw_bytes), true); as delta) {
                         <div class="text-xs text-hint">
                             <span [ngClass]="{ 'text-green-600': delta.status === 'good', 'text-yellow-600': delta.status === 'warn', 'text-red-600': delta.status === 'bad' }">
                                 {{ delta.percent > 0 ? '+' : '' }}{{ delta.percent }}%
@@ -862,7 +879,8 @@
                     <treo-card class="flex-col p-4">
                         <div class="font-semibold text-xs text-hint uppercase tracking-wider">Rand Read IOPS</div>
                         <div class="font-bold text-2xl my-2">{{ latest.rand_read_iops | number : '1.0-0' }}</div>
-                        @if (performanceBaseline?.sample_count > 1) { @if (getBaselineDelta(latest.rand_read_iops, performanceBaseline?.rand_read_iops, true); as delta) {
+                        @if (performanceBaseline?.sample_count > 1) { @if (getBaselineDelta(latest.rand_read_iops, $safeNavigationMigration(performanceBaseline?.rand_read_iops),
+                        true); as delta) {
                         <div class="text-xs text-hint">
                             <span [ngClass]="{ 'text-green-600': delta.status === 'good', 'text-yellow-600': delta.status === 'warn', 'text-red-600': delta.status === 'bad' }">
                                 {{ delta.percent > 0 ? '+' : '' }}{{ delta.percent }}%
@@ -875,7 +893,8 @@
                     <treo-card class="flex-col p-4">
                         <div class="font-semibold text-xs text-hint uppercase tracking-wider">Rand Write IOPS</div>
                         <div class="font-bold text-2xl my-2">{{ latest.rand_write_iops | number : '1.0-0' }}</div>
-                        @if (performanceBaseline?.sample_count > 1) { @if (getBaselineDelta(latest.rand_write_iops, performanceBaseline?.rand_write_iops, true); as delta) {
+                        @if (performanceBaseline?.sample_count > 1) { @if (getBaselineDelta(latest.rand_write_iops, $safeNavigationMigration(performanceBaseline?.rand_write_iops),
+                        true); as delta) {
                         <div class="text-xs text-hint">
                             <span [ngClass]="{ 'text-green-600': delta.status === 'good', 'text-yellow-600': delta.status === 'warn', 'text-red-600': delta.status === 'bad' }">
                                 {{ delta.percent > 0 ? '+' : '' }}{{ delta.percent }}%
@@ -888,8 +907,8 @@
                     <treo-card class="flex-col p-4">
                         <div class="font-semibold text-xs text-hint uppercase tracking-wider">Read Latency</div>
                         <div class="font-bold text-2xl my-2">{{ latest.rand_read_lat_ns_avg | latency }}</div>
-                        @if (performanceBaseline?.sample_count > 1) { @if (getBaselineDelta(latest.rand_read_lat_ns_avg, performanceBaseline?.rand_read_lat_ns_avg, false); as
-                        delta) {
+                        @if (performanceBaseline?.sample_count > 1) { @if (getBaselineDelta(latest.rand_read_lat_ns_avg,
+                        $safeNavigationMigration(performanceBaseline?.rand_read_lat_ns_avg), false); as delta) {
                         <div class="text-xs text-hint">
                             <span [ngClass]="{ 'text-green-600': delta.status === 'good', 'text-yellow-600': delta.status === 'warn', 'text-red-600': delta.status === 'bad' }">
                                 {{ delta.percent > 0 ? '+' : '' }}{{ delta.percent }}%
@@ -902,8 +921,8 @@
                     <treo-card class="flex-col p-4">
                         <div class="font-semibold text-xs text-hint uppercase tracking-wider">Write Latency</div>
                         <div class="font-bold text-2xl my-2">{{ latest.rand_write_lat_ns_avg | latency }}</div>
-                        @if (performanceBaseline?.sample_count > 1) { @if (getBaselineDelta(latest.rand_write_lat_ns_avg, performanceBaseline?.rand_write_lat_ns_avg, false); as
-                        delta) {
+                        @if (performanceBaseline?.sample_count > 1) { @if (getBaselineDelta(latest.rand_write_lat_ns_avg,
+                        $safeNavigationMigration(performanceBaseline?.rand_write_lat_ns_avg), false); as delta) {
                         <div class="text-xs text-hint">
                             <span [ngClass]="{ 'text-green-600': delta.status === 'good', 'text-yellow-600': delta.status === 'warn', 'text-red-600': delta.status === 'bad' }">
                                 {{ delta.percent > 0 ? '+' : '' }}{{ delta.percent }}%
